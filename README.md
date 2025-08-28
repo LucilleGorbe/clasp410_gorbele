@@ -4,3 +4,5 @@ This repository stores climatological lab assignments completed by me, Lucille G
 
 Lab assignment submissions will have separate folders, labelled by lab number (lab01, lab01, etc.).
 Each lab assignment submission will have separate READMEs located in their appropriate folder.
+
+#### I Like Editing Things Sometimes
