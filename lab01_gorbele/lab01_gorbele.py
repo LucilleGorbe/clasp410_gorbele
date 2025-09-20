@@ -16,9 +16,9 @@ sigma = 5.67E-8 #W/m2/K-4
 
 #function that accepts nlayers, S0, epsilon, and albedo {
 
-def n_layer_atmos(nlayers, epsilon=1., albedo=0.33, s0=1350., debug=False):
+def n_layer_atmos(nlayers, epsilon=1., albedo=0.33, s0=1350., s0layer=0, debug=False):
     '''
-    This function simulates an n-layer atmosphere.
+    This function produces a temperature profile based on an n-layer, energy balanced atmosphere.
     
     Parameters
     -----
@@ -30,6 +30,8 @@ def n_layer_atmos(nlayers, epsilon=1., albedo=0.33, s0=1350., debug=False):
         Defaults to 0.33, the average reflectivity of the body's surface.
     s0 - float
         Defaults to 1350, the solar forcing constant (W/m2) at the body's top-of-atmosphere.
+    s0layer - int
+        Defaults to 0, the layer of the atmosphere that absorbs solar irradiance in a basic model.
     debug - bool
         Defaults to false, enters debug mode.
     
@@ -53,7 +55,7 @@ def n_layer_atmos(nlayers, epsilon=1., albedo=0.33, s0=1350., debug=False):
             #write it so its expressed entirely as I, J, and epsilon
     if debug:
         print(A)
-    b[0] = -0.25 * s0 * (1-albedo)
+    b[s0layer] = -0.25 * s0 * (1-albedo)
     if debug:
         print(b)
 
@@ -71,7 +73,7 @@ def n_layer_atmos(nlayers, epsilon=1., albedo=0.33, s0=1350., debug=False):
 #plot temp function
 def plot_funct(temps, epsilon=1., albedo=0.33, s0=1350.):
     '''
-    This function plots a graph of temperature by layer.
+    This function plots a graph of temperature by atmospheric layer.
 
     Parameters
     -----
@@ -86,7 +88,8 @@ def plot_funct(temps, epsilon=1., albedo=0.33, s0=1350.):
 
     Returns
     -----
-    None
+    ax - matplotlib.axes._axes.Axes
+        Axis being plotted upon. Most modifications handled, returns for later modification.
     '''
     nlayers = np.size(temps) - 1
     layers = np.arange(0, nlayers+1)
@@ -98,6 +101,7 @@ def plot_funct(temps, epsilon=1., albedo=0.33, s0=1350.):
     ax.set_xlabel(r'Temperature ($K$)')
     ax.legend(loc='best')
     fig.tight_layout()
+    return ax
 
 
 #compare test cases function
@@ -182,16 +186,32 @@ def verify_n_layer():
             {tempA3_ver4_A0} K') 
 
 #question 3 function
-def vary_emis_layers(emismin=0., emismax=1., debug=False):
+def vary_emis_layers(emismin=0., emismax=1., emisnum=100, debug=False):
     '''
-    
+    Simulates an energy-balanced 1-layer atmosphere to find best fit for
+    Earth's effective emissivity under model.
+
+    Parameters
+    -----
+    emismin - float
+        Defaults to 0, minimum emissivity in comparison
+    emismax - float
+        Defaults to 1, maximum emissivity in comparison.
+    emisnum - int
+        Defaults to 100, the number of emissivities to plot over.
+    debug - bool
+        Defaults to false.
+
+    Returns
+    -----
+    None
     '''
 
     #Create test values for later use
     testpilon = 0.255
     testn = 1
 
-    emis=np.arange(emismin, emismax, 0.10)
+    emis=np.linspace(emismin, emismax, emisnum)
     layers=np.arange(1,12)
 
     fig, (ax1, ax2) = plt.subplots(1,2, figsize=[12,4])
@@ -204,25 +224,88 @@ def vary_emis_layers(emismin=0., emismax=1., debug=False):
         print(emis)
         
     ax1.plot(emis, tempse, label=rf'$\epsilon$={emis[e]}')
-    ax1.set_title()
-    ax1.legend(loc='best')
+    ax1.set_title('Surface Temperature in 1-Layer Increases With Emissivity')
+    ax1.set_xlabel(r'Surface Temperature ($K$)')
 
-    tempsl=np.zeros(np.size(layers))
     for l in range(np.size(layers)):
         layer = np.arange(0,layers[l]+1) # For plotting
         tempsl = n_layer_atmos(layers[l], epsilon=testpilon)
         ax2.plot(tempsl, layer, label = f'{layers[l]}-Layer System')
     ax2.legend(loc='best')
-    ax2.set_title('')
-    ax2.set_xlabel('')
+    ax2.set_title(r'Temperature by Layer Increases with Additional Layers; ($\epsilon=0.255$)')
+    ax2.set_xlabel(r'Temperature ($K$)')
+    ax2.set_ylabel('Atmospheric Layer')
 
     plt.tight_layout()
-
     
+def venus(debug=False):
+    '''
+    Simulates Venusian atmosphere with varying numbers of layers, comparing 
+    modelled and observed to determine effective atmospheric structure of Venus.
 
-#venus function (q4)
+    Parameters
+    -----
+    debug - bool
+        Defaults to false.
 
-#nuke function (q5)
+    Returns
+    -----
+    None 
+
+    Notes
+    -----
+    Venus albedo sourced from A. Mallama, B. Krobusek, H. Pavlov, (2017).
+    "Comprehensive wide-band magnitudes and albedos for the planets,
+    with applications to exo-planets and Planet Nine", Icarus 282 p19-33.
+    '''
+
+    epsV=1
+    albV=0.7 
+    sV=2600 # W/m2 
+    surfTemp = 700 # K
+    tempCompare = 0 # initialize comparison tool
+    layerCompare = 0 # initialize comparison tool
+
+    layers=np.arange(2,75,3)
+
+    fig, ax = plt.subplots(1,1,figsize=[6,4])
+
+    for l in range(np.size(layers)):
+        tempsl = n_layer_atmos(layers[l], epsilon=epsV, albedo=albV, s0=sV)
+        if (np.abs(tempsl[0]-surfTemp) < np.abs(tempCompare-surfTemp)):
+            # Save best match
+            tempCompare = tempsl[0]
+            temps_plot = tempsl.copy()
+            layerCompare=layers[l]
+
+    if debug: 
+        print(f'Temp Closest to surfTemp: {tempCompare}')
+        print(f'Temps: {temps_plot}')
+        print(f'Layer: {layerCompare}')
+    
+    layer = np.arange(0,layerCompare+1)
+    ax.plot(temps_plot, layer, label = f'{layerCompare}-Layer System')
+    ax.set_title(f'Venusian Temperature Best Approximated by {layerCompare}-Layer System')
+    ax.set_xlabel(r'Temperature ($K$)')
+    ax.set_ylabel('Venus Atmospheric Layer')
+    plt.tight_layout()
+
+def nuke():
+    '''
+    Simulates 5-layer Atmosphere under an energy-balanced nuclear winter scenario -
+    all incoming solar flux is absorbed by the top layer.
+
+    Parameters
+    -----
+    None
+
+    Returns
+    -----
+    None
+    '''
+    nuked_temps = n_layer_atmos(nlayers=5, epsilon=0.5, s0layer=5)
+    ax = plot_funct(nuked_temps, epsilon=0.5)
+    ax.set_title(r'5-Layer Atmosphere Model with Total Solar Absorption in Top Layer')
 
 #__name__ = '__main__'
 
