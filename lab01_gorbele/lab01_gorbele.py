@@ -18,6 +18,12 @@ Different values may be input if the user is curious about emissivity ranges.
 `$ venus()`, which addresses science question #2, and
 `$ nuke()`, which adresses science question #3.
 Plots are saved with descriptive names and are labelled.
+To show the plots from the terminal, after running one of these commands,
+the user can run `$ plt.show()` to display the current plot.
+
+Note that, until the plot is closed or unless interactive mode is turned on, 
+the terminal will be occupied running the plot and will not
+be able to run any additional functions.
 '''
 
 import numpy as np
@@ -122,8 +128,8 @@ def plot_funct(temps, epsilon=1., albedo=0.33, s0=1350.):
             rf'$\alpha$={albedo}, $s0$={s0}')
 
     # Decorate the plot to make it comprehensible at a glance
-    ax.set_title(f'Temperature by Layer under \
-                 {nlayers}-Layer Atmospheric Model.')
+    ax.set_title('Temperature by Layer under ' \
+                 f'{nlayers}-Layer Atmospheric Model.')
     ax.set_ylabel('Layer')
     ax.set_xlabel(r'Temperature ($K$)')
     ax.legend(loc='best')
