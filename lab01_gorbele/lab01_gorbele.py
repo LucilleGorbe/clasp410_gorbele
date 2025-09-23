@@ -3,7 +3,21 @@
 This file solves the N-Layer atmosphere problem for Lab 01 and all subparts.
 
 TO REPRODUCE THE VALUES AND PLOTS IN MY REPORT, DO THIS:
-<tbd>
+Ensure that any libraries imported below are installed to the user's
+instance of python3.
+In the terminal, enter `$ run lab01_gorbele.py`. The $ sign is not typed
+by the user, but indicates where shell input begins.
+
+Next, to verify the code is working on the user's machine, run 
+`$ verify_n_layer()` in the terminal. If the values match, then the code
+is ready to run on the user's machine. 
+
+Plots and results can be obtained by running the commands:
+`$ vary_emis_layers()`, which addresses science question #1. 
+Different values may be input if the user is curious about emissivity ranges.
+`$ venus()`, which addresses science question #2, and
+`$ nuke()`, which adresses science question #3.
+Plots are saved with descriptive names and are labelled.
 '''
 
 import numpy as np
@@ -14,11 +28,11 @@ plt.style.use('seaborn-v0_8')
 # Physical Constants
 sigma = 5.67E-8 #W/m2/K-4
 
-#function that accepts nlayers, S0, epsilon, and albedo {
-
-def n_layer_atmos(nlayers, epsilon=1., albedo=0.33, s0=1350., s0layer=0, debug=False):
+def n_layer_atmos(nlayers, epsilon=1., albedo=0.33, s0=1350., \
+                  s0layer=0, debug=False):
     '''
-    This function produces a temperature profile based on an n-layer, energy balanced atmosphere.
+    This function produces a temperature profile 
+    based on an n-layer, energy balanced atmosphere.
     
     Parameters
     -----
@@ -29,9 +43,11 @@ def n_layer_atmos(nlayers, epsilon=1., albedo=0.33, s0=1350., s0layer=0, debug=F
     albedo - float
         Defaults to 0.33, the average reflectivity of the body's surface.
     s0 - float
-        Defaults to 1350, the solar forcing constant (W/m2) at the body's top-of-atmosphere.
+        Defaults to 1350, the solar forcing constant (W/m2) 
+        at the body's top-of-atmosphere.
     s0layer - int
-        Defaults to 0, the layer of the atmosphere that absorbs solar irradiance in a basic model.
+        Defaults to 0, the layer of the atmosphere that 
+        absorbs solar irradiance in a basic model.
     debug - bool
         Defaults to false, enters debug mode.
     
@@ -47,12 +63,12 @@ def n_layer_atmos(nlayers, epsilon=1., albedo=0.33, s0=1350., s0layer=0, debug=F
     # Populate based on model
     for i in range(nlayers+1): 
         for j in range(nlayers+1):
+            # Handles diagonal
             if (i == j):
-                A[i,j] = - 2 + 1 * (i==0) #maybe faster than if statements
+                A[i,j] = - 2 + 1 * (i==0)
+            # Handles sum functions
             else: 
                 A[i,j] = (1-epsilon)**(np.abs(i-j)-1) * epsilon**(i>0)
-            # row major: i is tbe row, j is the column, so loops through first row
-            #write it so its expressed entirely as I, J, and epsilon
     if debug:
         print(A)
     b[s0layer] = -0.25 * s0 * (1-albedo)
@@ -67,13 +83,16 @@ def n_layer_atmos(nlayers, epsilon=1., albedo=0.33, s0=1350., s0layer=0, debug=F
         print(fluxes)
 
     tempS = (fluxes/(sigma))**(1/4)
-    tempS[1:] = tempS[1:] / (epsilon**(1/4)) # Handles non-one emissivity case
+    # Handles perfect absorption of Earth's surface to LW radiation
+    tempS[1:] = tempS[1:] / (epsilon**(1/4)) 
+    if debug:
+        print(tempS)
     return tempS
 
 #plot temp function
 def plot_funct(temps, epsilon=1., albedo=0.33, s0=1350.):
     '''
-    This function plots a graph of temperature by atmospheric layer.
+    This function plots a graph of temperature by altitude.
 
     Parameters
     -----
@@ -84,27 +103,37 @@ def plot_funct(temps, epsilon=1., albedo=0.33, s0=1350.):
     albedo - float
         Defaults to 0.33, the average reflectivity of the body's surface.
     s0 - float
-        Defaults to 1350, the solar forcing constant (W/m2) at the body's top-of-atmosphere.
+        Defaults to 1350, the solar forcing constant (W/m2) 
+        at the body's top-of-atmosphere.
 
     Returns
     -----
     ax - matplotlib.axes._axes.Axes
-        Axis being plotted upon. Most modifications handled, returns for later modification.
+        Axis being plotted upon. Most modifications handled, 
+        returns for later modification.
     '''
-    nlayers = np.size(temps) - 1
+    # create layers vector for plotting as a proxy for altitude.
+    nlayers = np.size(temps) - 1 
     layers = np.arange(0, nlayers+1)
 
+    # Plot the temperatures as a function of altitude
     fig, ax = plt.subplots(1,1,figsize=[6,4])
-    ax.plot(temps, layers, label=rf'$\epsilon$={epsilon}, $\alpha$={albedo}, $s0$={s0}')
-    ax.set_title(f'Temperature by Layer under {nlayers}-Layer Atmospheric Model.')
+    ax.plot(temps, layers, label=rf'$\epsilon$={epsilon} '
+            rf'$\alpha$={albedo}, $s0$={s0}')
+
+    # Decorate the plot to make it comprehensible at a glance
+    ax.set_title(f'Temperature by Layer under \
+                 {nlayers}-Layer Atmospheric Model.')
     ax.set_ylabel('Layer')
     ax.set_xlabel(r'Temperature ($K$)')
     ax.legend(loc='best')
     fig.tight_layout()
+
+    # Return ax for later calls so this function 
+    # can be reused in the nuke function
     return ax
 
 
-#compare test cases function
 def verify_n_layer():
     '''
     This function verifies that n_layer_atmos behaves in line with other
@@ -121,7 +150,8 @@ def verify_n_layer():
 
     Notes
     -----
-    Comparison sourced from https://singh.sci.monash.edu/models/Nlayer/N_layer.html
+    Comparison sourced from 
+    https://singh.sci.monash.edu/models/Nlayer/N_layer.html
     '''
     tempS_est4 = n_layer_atmos(4)[0]
     tempS_ver4 = 375.8 # K
@@ -186,7 +216,7 @@ def verify_n_layer():
             {tempA3_ver4_A0} K') 
 
 #question 3 function
-def vary_emis_layers(emismin=0., emismax=1., emisnum=100, debug=False):
+def vary_emis_layers(emismin=0.01, emismax=1., emisnum=100, debug=False):
     '''
     Simulates an energy-balanced 1-layer atmosphere to find best fit for
     Earth's effective emissivity under model.
@@ -194,11 +224,11 @@ def vary_emis_layers(emismin=0., emismax=1., emisnum=100, debug=False):
     Parameters
     -----
     emismin - float
-        Defaults to 0, minimum emissivity in comparison
+        Defaults to 0.01, minimum emissivity in comparison
     emismax - float
         Defaults to 1, maximum emissivity in comparison.
     emisnum - int
-        Defaults to 100, the number of emissivities to plot over.
+        Defaults to 99, the number of emissivities to plot over.
     debug - bool
         Defaults to false.
 
@@ -207,36 +237,51 @@ def vary_emis_layers(emismin=0., emismax=1., emisnum=100, debug=False):
     None
     '''
 
-    #Create test values for later use
+    # Initialize 'block' atmosphere layer and theorized 
+    # effective emissivity of the atmosphere
     testpilon = 0.255
     testn = 1
 
+    # Initialize reasonable emissivity and layers ranges;
+    # if the temperature is significantly different, 
+    # different ranges may be used.
     emis=np.linspace(emismin, emismax, emisnum)
     layers=np.arange(1,12)
 
-    fig, (ax1, ax2) = plt.subplots(1,2, figsize=[12,4])
     tempse=np.zeros(np.size(emis))
     for e in (range(np.size(emis))):
-        tempse[e]=n_layer_atmos(testn, epsilon=emis[e])[0] # Append surf. temps only
+        # Append surf. temps only
+        tempse[e]=n_layer_atmos(testn, epsilon=emis[e])[0] 
 
     if debug:
         print(tempse)
         print(emis)
-        
-    ax1.plot(emis, tempse, label=rf'$\epsilon$={emis[e]}')
-    ax1.set_title('Surface Temperature in 1-Layer Increases With Emissivity')
-    ax1.set_xlabel(r'Surface Temperature ($K$)')
 
+    # Plot surface temperature by emissivity and report to terminal
+    fig, (ax1, ax2) = plt.subplots(1,2, figsize=[12,4])
+    ax1.plot(emis, tempse, label=rf'$\epsilon$={emis[e]}')
+
+    # Make plot legible at a glance
+    ax1.set_title('Surface Temperature in 1-Layer Increases With Emissivity')
+    ax1.set_ylabel(r'Surface Temperature ($K$)')
+    ax1.set_xlabel('Emissivity')
+
+    # Plot surface temperature by atmospheric layers and report to terminal
     for l in range(np.size(layers)):
         layer = np.arange(0,layers[l]+1) # For plotting
         tempsl = n_layer_atmos(layers[l], epsilon=testpilon)
         ax2.plot(tempsl, layer, label = f'{layers[l]}-Layer System')
+    
+    # Make plot legible at a glance
     ax2.legend(loc='best')
-    ax2.set_title(r'Temperature by Layer Increases with Additional Layers; ($\epsilon=0.255$)')
+    ax2.set_title('Temperature by Layer Increases with Additional Layers;'
+                  r'($\epsilon=0.255$)')
     ax2.set_xlabel(r'Temperature ($K$)')
     ax2.set_ylabel('Atmospheric Layer')
-
     plt.tight_layout()
+
+    plt.savefig('Earth_TbyEmisANDLayer.jpg')
+
     
 def venus(debug=False):
     '''
@@ -259,21 +304,27 @@ def venus(debug=False):
     with applications to exo-planets and Planet Nine", Icarus 282 p19-33.
     '''
 
+    # Venusian atmosphere assumed perfectly absorbing, provide
+    # other known values for Venus
     epsV=1
     albV=0.7 
     sV=2600 # W/m2 
     surfTemp = 700 # K
+
     tempCompare = 0 # initialize comparison tool
     layerCompare = 0 # initialize comparison tool
 
+    # Initialize reasonable layers ranges;
+    # if the temperature is significantly different, 
+    # different ranges may be used.
     layers=np.arange(2,75,3)
 
-    fig, ax = plt.subplots(1,1,figsize=[6,4])
-
+    # Iterate over a range of layers to find best match to 
+    # surface temperature of Venus
     for l in range(np.size(layers)):
         tempsl = n_layer_atmos(layers[l], epsilon=epsV, albedo=albV, s0=sV)
         if (np.abs(tempsl[0]-surfTemp) < np.abs(tempCompare-surfTemp)):
-            # Save best match
+            # Save best match to known surface temperature of Venus
             tempCompare = tempsl[0]
             temps_plot = tempsl.copy()
             layerCompare=layers[l]
@@ -283,17 +334,24 @@ def venus(debug=False):
         print(f'Temps: {temps_plot}')
         print(f'Layer: {layerCompare}')
     
+    # Create layers vector and plot against temps
     layer = np.arange(0,layerCompare+1)
+    fig, ax = plt.subplots(1,1,figsize=[6,4])
     ax.plot(temps_plot, layer, label = f'{layerCompare}-Layer System')
-    ax.set_title(f'Venusian Temperature Best Approximated by {layerCompare}-Layer System')
+
+    # Make plot legible at a glance    
+    ax.set_title('Venusian Temperature Best Approximated by ' \
+                 f'{layerCompare}-Layer System')
     ax.set_xlabel(r'Temperature ($K$)')
     ax.set_ylabel('Venus Atmospheric Layer')
     plt.tight_layout()
 
+    plt.savefig('Venus_TbyLayer.jpg')
+
 def nuke():
     '''
-    Simulates 5-layer Atmosphere under an energy-balanced nuclear winter scenario -
-    all incoming solar flux is absorbed by the top layer.
+    Simulates 5-layer Atmosphere under an energy-balanced nuclear winter 
+    scenario - all incoming solar flux is absorbed by the top layer.
 
     Parameters
     -----
@@ -303,23 +361,14 @@ def nuke():
     -----
     None
     '''
+
+    # Call n_layer_atmos to generate temperatures with uppermost layer
+    # absorbing all solar radiation
     nuked_temps = n_layer_atmos(nlayers=5, epsilon=0.5, s0layer=5)
+
+    # Plot temps by altitude and use returned axis to rename plot title
     ax = plot_funct(nuked_temps, epsilon=0.5)
-    ax.set_title(r'5-Layer Atmosphere Model with Total Solar Absorption in Top Layer')
-
-#__name__ = '__main__'
-
-#lab report
-    #intro
-    #methodology
-        #equations done in LaTeX
-    #results
-        #"To reproduce my results, run function...""
-        #"Now we explore... For one layer..."
-        #what does my code teach me
-    #Discussion
-        #reflects on experiment - different stuff, what is limiting, how compares to other studies
-            #how well does this represent the real earth?
-            #earth not in energy balance, has shortcomings
-            #misses other forms of energy transport
-            #winds, weathers, latent heat, terrestrial heat
+    ax.set_title(r'5-Layer Atmosphere Model with Total '
+                    'Solar Absorption in Top Layer')
+    
+    plt.savefig('NukedEarth_TbyLayer.jpg')
