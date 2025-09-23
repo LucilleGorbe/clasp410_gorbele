@@ -237,10 +237,15 @@ def vary_emis_layers(emismin=0.01, emismax=1., emisnum=100, debug=False):
     None
     '''
 
-    # Initialize 'block' atmosphere layer and theorized 
-    # effective emissivity of the atmosphere
+    # Initialize 'block' atmosphere layer, theorized 
+    # effective emissivity of the atmosphere, and temperature to match.
     testpilon = 0.255
     testn = 1
+    esTemp = 288 # K
+    bestEm = 0
+    bestEmidx = 0
+    bestL = 0
+    bestLTemp=0
 
     # Initialize reasonable emissivity and layers ranges;
     # if the temperature is significantly different, 
@@ -252,6 +257,11 @@ def vary_emis_layers(emismin=0.01, emismax=1., emisnum=100, debug=False):
     for e in (range(np.size(emis))):
         # Append surf. temps only
         tempse[e]=n_layer_atmos(testn, epsilon=emis[e])[0] 
+        # Algorithm to determine best fit.
+        if (np.abs(tempse[e]-esTemp) < np.abs(tempse[bestEmidx]-esTemp)):
+            bestEm=emis[e]
+            bestEmidx=e
+
 
     if debug:
         print(tempse)
@@ -270,6 +280,11 @@ def vary_emis_layers(emismin=0.01, emismax=1., emisnum=100, debug=False):
     for l in range(np.size(layers)):
         layer = np.arange(0,layers[l]+1) # For plotting
         tempsl = n_layer_atmos(layers[l], epsilon=testpilon)
+        # Algoritm to determine best fit
+        if (np.abs(tempsl[0]-esTemp) < np.abs(bestLTemp-esTemp)):
+            bestL=l
+            bestLTemp = tempsl[0]
+
         ax2.plot(tempsl, layer, label = f'{layers[l]}-Layer System')
     
     # Make plot legible at a glance
@@ -281,6 +296,11 @@ def vary_emis_layers(emismin=0.01, emismax=1., emisnum=100, debug=False):
     plt.tight_layout()
 
     plt.savefig('Earth_TbyEmisANDLayer.jpg')
+
+    print("The closest emissivity in a 1-layer atmopshere to Earth's reality " \
+          f"is {bestEm:.2f}.")
+    print("The closest atmospheric structure for an effective emissivity of " \
+          f"0.255 to Earth's Reality is {bestL} layers.")   
 
     
 def venus(debug=False):
