@@ -215,8 +215,8 @@ def verify_euler_rk8():
     #talk about breakdown between euler and rk8 methods (loss of equilibrium) under different models
     fig.text(0.45, 0.03, r"$a=1, b=2, c=1, d=3$")
     fig.tight_layout()
+    plt.savefig('EulerVRK8.png')
     
-
 def plot_LV(ax, timeE, timeR, N1E, N2E, N1R, N2R):
     '''
     This function plots Eulerian and Runge-Kutte models of coupled differential
@@ -258,7 +258,7 @@ def vary_comp():
     '''
     This function produces a figure exploration of how the Lotka-Volterra
     Competition Model changes with input coefficients and initial conditions
-    using the Runge-Kutte adaptive ODE solver.
+    using the Runge-Kutta adaptive ODE solver.
 
     <FIX DOCSTRING LATER>
 
@@ -287,8 +287,8 @@ def vary_comp():
             time, N1, N2 = solve_rk8(dNdt_comp, N1_init=N1_0, N2_init=N2_0,  
                                      dT=dT, t_final=100, a=a, b=b, c=c, d=d)
             ax = axes[i,j]
-            ax.plot(time, N1, 'g', label='N1')
-            ax.plot(time, N2, 'g-', label='N2')
+            ax.plot(time, N1, 'g',  label='N1', lw=5)
+            ax.plot(time, N2, 'b', label='N2', lw=5)
 
             ax.set_ylim(0, 1.0)
             ax.legend(loc='best')
@@ -309,6 +309,41 @@ def vary_comp():
     fig.suptitle("  Varying Coefficients and Initial Conditions Produces\
     Different Equilibria in L-V Competition Model", 
                  fontsize='x-large', horizontalalignment='center')
+    
+    plt.savefig('vary_comp.png')
+
+def vary_pp():
+    '''
+    This function produces a figure 
+    '''
+
+    fig, axes = plt.subplots(3,6, figsize=(12,8))
+
+    coeffs = [[1,2,1,3],[2,2,2,2],[3,1,3,1]]
+    inits = [[0.2, 0.2], [0.8, 0.2], [0.2, 0.8]]
+    dT = 0.05 #maximum dT time step in years 
+
+    for i, m in enumerate(coeffs):
+        a, b, c, d = m
+        for j, n in enumerate (inits):
+            N1_0, N2_0 = n
+            time, N1, N2 = solve_rk8(dNdt_predprey, N1_init=N1_0, N2_init=N2_0,  
+                                     dT=dT, t_final=100, a=a, b=b, c=c, d=d)
+            axes[i,j].plot(time, N1, label='N1', lw=2)
+            axes[i,j].plot(time, N2, '-', label='N2', lw=2)
+            axes[i,j+3].plot(N1, N2, label=f"a = {a},b = {b},\nc = {c},d = {d}")
+            axes[i,j].set_ylim(0, 1.0)
+            axes[i,j].legend(loc='best')
+            axes[i,j+3].legend(loc='best')
+
+#so like have a matrix with diff coeff values and then go over it to see how 
+#modifying each coeff changes things?
+#Then use a few cases to see how initials change? #too complicated
+
+#I remember the -- and - lines that make up the example he gave for the unplotted legend
+#so now the question is does that work and how do i show the results of coefficients
+#because I really do not know
+
 
 
 
