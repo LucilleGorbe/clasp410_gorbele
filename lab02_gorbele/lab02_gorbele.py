@@ -113,7 +113,7 @@ def euler_solve(func, N1_init=.5, N2_init=.5, dT=.1, t_final=100.0, **kwargs):
         N1[i] = N1[i-1] + dN1*dT
         N2[i] = N2[i-1] + dN2*dT
 
-    print("Eulerian solution done")
+    #print("Eulerian solution done")
     # Return values to caller.
     return time, N1, N2
 
@@ -152,8 +152,8 @@ def solve_rk8(func, N1_init=.5, N2_init=.5, dT=10, t_final=100.0, \
     # Perform the integration
     time, N1, N2 = result.t, result.y[0, :], result.y[1, :]
 
-    print("rk8 solution done")
-    #  Return values to caller.
+    # print("rk8 solution done")
+    # Return values to caller.
     return time, N1, N2
 
 def verify_euler_rk8():
@@ -179,9 +179,9 @@ def verify_euler_rk8():
     
     # Call solutions with different dTs.
     timeppET, N1ppET, N2ppET = euler_solve(dNdt_predprey, N1_init=N1_0, 
-                                     N2_init=N2_0, dT=0.5)
+                                     N2_init=N2_0, dT=0.025)
     timeppRT, N1ppRT, N2ppRT = solve_rk8(dNdt_predprey, N1_init=N1_0, 
-                                     N2_init=N2_0, dT=0.5)
+                                     N2_init=N2_0, dT=0.025)
     timecompET, N1compET, N2compET = euler_solve(dNdt_comp, N1_init=N1_0, 
                                      N2_init=N2_0, dT=0.5)
     timecompRT, N1compRT, N2compRT = solve_rk8(dNdt_comp, N1_init=N1_0, 
@@ -208,14 +208,15 @@ def verify_euler_rk8():
 
     # Label things well
     axes[1,0].set_title(r"Lotka-Volterra Competition Model ($dT=0.5 years$)")
-    axes[1,1].set_title(r"Lotka-Volterra Predator-Prey Model ($dT=0.5 years$)")
+    axes[1,1].set_title(r"Lotka-Volterra Predator-Prey Model ($dT=0.025 years$)")
 
     #set coefficients at bottom of plot
-
-    #talk about breakdown between euler and rk8 methods (loss of equilibrium) under different models
     fig.text(0.45, 0.03, r"$a=1, b=2, c=1, d=3$")
     fig.tight_layout()
     plt.savefig('EulerVRK8.png')
+
+    #talk about breakdown between euler and rk8 methods (loss of equilibrium) under different models
+
     
 def plot_LV(ax, timeE, timeR, N1E, N2E, N1R, N2R):
     '''
@@ -260,8 +261,6 @@ def vary_comp():
     Competition Model changes with input coefficients and initial conditions
     using the Runge-Kutta adaptive ODE solver.
 
-    <FIX DOCSTRING LATER>
-
     Parameters
     ----------
 
@@ -271,11 +270,10 @@ def vary_comp():
         
     '''
 
+    # create the figure
     fig, axes = plt.subplots(4,4,figsize=(12,8))
 
-    #create the figure
-    #just run it a million times, vectors of coefficients or so?
-
+    # create coefficients and vectors 
     coeffs = [[1,2,1,3],[3, 4, 2, 1],[2,2,2,2],[3,1,3,1]]
     inits = [[0.2, 0.2], [0.8, 0.8], [0.8, 0.2], [0.2, 0.8]]
     dT = 0.05 #maximum dT time step in years 
@@ -314,27 +312,73 @@ def vary_comp():
 
 def vary_pp():
     '''
-    This function produces a figure 
+    This function produces two figures examining the Lotka-Volterra
+    Predator-Prey Model using the Runge-Kutta adaptive ODE solver.
+    Solutions are plotted across initial conditions and coefficients, and 
+    solutions are plotted against time and each other.
     '''
 
-    fig, axes = plt.subplots(3,6, figsize=(12,8))
+    # create figures for plotting on
+    fig1, axes = plt.subplots(2,2, figsize=(8,8))
+    fig2, ax2 = plt.subplots(4, 1, figsize=(4, 8))
 
-    coeffs = [[1,2,1,3],[2,2,2,2],[3,1,3,1]]
-    inits = [[0.2, 0.2], [0.8, 0.2], [0.2, 0.8]]
+    # initialize coefficients and initial values
+    coeffs = [[1,2,1,3],[3, 4, 2, 1],[2,2,2,2],[3,1,3,1]]
+    n = [[0.2, 0.2], [0.8, 0.8], [0.8, 0.2], [0.2, 0.8]] #initial values
     dT = 0.05 #maximum dT time step in years 
 
+    # iterate over all coefficients fo plotting
     for i, m in enumerate(coeffs):
         a, b, c, d = m
-        for j, n in enumerate (inits):
-            N1_0, N2_0 = n
-            time, N1, N2 = solve_rk8(dNdt_predprey, N1_init=N1_0, N2_init=N2_0,  
+        # create rk8 solutions for plotting
+        time1, N11, N21 = solve_rk8(dNdt_predprey, N1_init=n[0][0], N2_init=n[0][1],  
                                      dT=dT, t_final=100, a=a, b=b, c=c, d=d)
-            axes[i,j].plot(time, N1, label='N1', lw=2)
-            axes[i,j].plot(time, N2, '-', label='N2', lw=2)
-            axes[i,j+3].plot(N1, N2, label=f"a = {a},b = {b},\nc = {c},d = {d}")
-            axes[i,j].set_ylim(0, 1.0)
-            axes[i,j].legend(loc='best')
-            axes[i,j+3].legend(loc='best')
+        time2, N12, N22 = solve_rk8(dNdt_predprey, N1_init=n[1][0], N2_init=n[1][1],  
+                                     dT=dT, t_final=100, a=a, b=b, c=c, d=d)
+        time3, N13, N23 = solve_rk8(dNdt_predprey, N1_init=n[2][0], N2_init=n[2][1],  
+                                     dT=dT, t_final=100, a=a, b=b, c=c, d=d)
+        time4, N14, N24 = solve_rk8(dNdt_predprey, N1_init=n[0][0], N2_init=n[0][1],  
+                                     dT=dT, t_final=100, a=a, b=b, c=c, d=d)
+        
+        #flatten the axis to easily iterate over them and plot all sols
+        ax=axes.flatten()[i]
+        ax.plot(time1, N11, c='navy',   ls='solid'  , lw=0.8)
+        ax.plot(time1, N21, c='navy',   ls='dashed' , lw=0.8) #not very visible
+        ax.plot(time2, N12, c='blue',   ls='solid'  , lw=0.8)
+        ax.plot(time2, N22, c='blue',   ls='dashdot', lw=0.8)
+        ax.plot(time3, N13, c='r',      ls='solid'  , lw=0.8)
+        ax.plot(time3, N23, c='r',      ls='dashdot', lw=0.8)
+        ax.plot(time4, N14, c='orange', ls='solid'  , lw=0.8)
+        ax.plot(time4, N24, c='orange', ls='dashdot', lw=0.8)
+
+        # Change axis limits for visibility; otherwise too occluded
+        ax.set_xlim(0,25)
+
+        # Plot legend with generalized style legend and coefficients
+        ax.plot([0], [0], 'black' , label='N1')
+        ax.plot([0], [0], color='black',ls='--', label='N2')
+        ax.legend(loc='upper right')
+        ax.set_title(f'a={a}, b={b}, c={c}, d={d}')
+
+        # plot phase diagrams
+        ax2[i].plot(N11, N21, c='navy'  )
+        ax2[i].plot(N12, N22, c='blue'  )
+        ax2[i].plot(N13, N23, c='r'     )
+        ax2[i].plot(N14, N24, c='orange')
+
+        # place coefficients next to plots
+        fig2.text(0.90, (-i)*0.2 + 0.77, f"a = {a}\nb = {b}\nc = {c}\nd = {d}", \
+                 rotation='horizontal', fontsize='large')
+        
+    # clean up figure and save for later
+    fig1.tight_layout()
+    fig1.savefig('vary_pp_coeffs.png')
+    fig2.savefig('phase_pp.png')
+        
+
+            
+
+
 
 #so like have a matrix with diff coeff values and then go over it to see how 
 #modifying each coeff changes things?
