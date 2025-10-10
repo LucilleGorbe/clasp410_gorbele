@@ -3,7 +3,23 @@
 This file solves the N-Layer atmosphere problem for Lab 01 and all subparts.
 
 TO REPRODUCE THE VALUES AND PLOTS IN MY REPORT, DO THIS:
-(IN REPORT, REFERENCE DOCSTRING)
+Ensure that any libraries imported below are installed to the user's
+instance of python3.
+In a terminal window opened to the directory (folder) that has this script 
+and is running python, enter `$ run lab02_gorbele.py`. The $ sign is not typed 
+by the user, but indicates where shell input begins.
+
+Plots and results can be obtained by running the commands:
+`$ verify_euler_rk8()`, which addresses science question #1. 
+`$ vary_comp()`, which addresses science question #2, and
+`$ vary_pp()`, which adresses science question #3.
+Plots are saved with descriptive names and are labelled.
+To show the plots from the terminal, after running one of these commands,
+the user can run `$ plt.show()` to display the current plot.
+
+Note that, until the plot is closed or unless interactive mode is turned on, 
+the terminal will be occupied running the plot and will not
+be able to run any additional functions.
 '''
 
 
@@ -11,6 +27,7 @@ import numpy as np
 from numpy.linalg import inv
 from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
+from matplotlib.ticker import AutoLocator
 plt.style.use('seaborn-v0_8')
 
 def dNdt_comp(t, N, a=1, b=2, c=1, d=3):
@@ -214,9 +231,6 @@ def verify_euler_rk8():
     fig.text(0.45, 0.03, r"$a=1, b=2, c=1, d=3$")
     fig.tight_layout()
     plt.savefig('EulerVRK8.png')
-
-    #talk about breakdown between euler and rk8 methods (loss of equilibrium) under different models
-
     
 def plot_LV(ax, timeE, timeR, N1E, N2E, N1R, N2R):
     '''
@@ -278,6 +292,7 @@ def vary_comp():
     inits = [[0.2, 0.2], [0.8, 0.8], [0.8, 0.2], [0.2, 0.8]]
     dT = 0.05 #maximum dT time step in years 
 
+    # iterate over all coefficients and initial conditions to produce sols
     for i, m in enumerate(coeffs):
         a, b, c, d = m
         for j, n in enumerate (inits):
@@ -285,29 +300,37 @@ def vary_comp():
             time, N1, N2 = solve_rk8(dNdt_comp, N1_init=N1_0, N2_init=N2_0,  
                                      dT=dT, t_final=100, a=a, b=b, c=c, d=d)
             ax = axes[i,j]
-            ax.plot(time, N1, 'g',  label='N1', lw=5)
-            ax.plot(time, N2, 'b', label='N2', lw=5)
+            ax.plot(time, N1, 'g', label='N1', lw=2)
+            ax.plot(time, N2, 'b', label='N2', lw=2)
 
             ax.set_ylim(0, 1.0)
             ax.legend(loc='best')
-        
+
+        # get rid of excess tick markers that make the graph cluttered
         for axy in axes[:,1:]:
-            axy.set_yticks([])
-
+            for l in axy:
+                l.yaxis.set_ticklabels([])
         for axx in axes[:-1,:]:
-            axx.set_xticks([])
+            for k in axx:
+                k.xaxis.set_ticklabels([])
 
-        fig.text(0.90, (-i)*0.2 + 0.78, f"a = {a},b = {b},\nc = {c},d = {d}", \
+        # label coefficients for every group
+        fig.text(0.85, (-i)*0.225 + 0.82, f"a = {a},b = {b},\nc = {c},d = {d}", \
                  rotation='horizontal', fontsize='large')
 
-   
-    fig.text(0.46, 0.06, r"Time ($years$)", fontsize='x-large')
-    fig.text(0.07, 0.35, "Population/Carrying Cap", rotation='vertical',\
+    # label figure informatively
+    fig.text(0.46, 0.02, r"Time ($years$)", fontsize='x-large')
+    fig.text(0.02, 0.35, "Population/Carrying Cap", rotation='vertical',\
              fontsize='x-large')
     fig.suptitle("  Varying Coefficients and Initial Conditions Produces\
     Different Equilibria in L-V Competition Model", 
                  fontsize='x-large', horizontalalignment='center')
     
+    # adjust the figure size and shape for legibility
+    fig.tight_layout()
+    fig.subplots_adjust(left=0.07, bottom = 0.08)
+    
+    # save it for the report!
     plt.savefig('vary_comp.png')
 
 def vary_pp():
@@ -372,24 +395,6 @@ def vary_pp():
         
     # clean up figure and save for later
     fig1.tight_layout()
-    fig1.savefig('vary_pp_coeffs.png')
+    fig1.savefig('vary_pp.png')
     fig2.savefig('phase_pp.png')
         
-
-            
-
-
-
-#so like have a matrix with diff coeff values and then go over it to see how 
-#modifying each coeff changes things?
-#Then use a few cases to see how initials change? #too complicated
-
-#I remember the -- and - lines that make up the example he gave for the unplotted legend
-#so now the question is does that work and how do i show the results of coefficients
-#because I really do not know
-
-
-
-
-
-
