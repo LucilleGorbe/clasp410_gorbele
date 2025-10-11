@@ -360,7 +360,7 @@ def vary_pp():
                                      dT=dT, t_final=100, a=a, b=b, c=c, d=d)
         time3, N13, N23 = solve_rk8(dNdt_predprey, N1_init=n[2][0], N2_init=n[2][1],  
                                      dT=dT, t_final=100, a=a, b=b, c=c, d=d)
-        time4, N14, N24 = solve_rk8(dNdt_predprey, N1_init=n[0][0], N2_init=n[0][1],  
+        time4, N14, N24 = solve_rk8(dNdt_predprey, N1_init=n[3][0], N2_init=n[3][1],  
                                      dT=dT, t_final=100, a=a, b=b, c=c, d=d)
         
         #flatten the axis to easily iterate over them and plot all sols
