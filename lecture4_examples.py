@@ -9,7 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 plt.style.use("seaborn-v0_8")
 
-def solve_heat(xstop=1, tstop=0.2, dx=0.02, dt=0.0002, c2=1):
+def solve_heat(xstop=1, tstop=0.2, dx=0.02, dt=0.0002, c2=1, d=False):
     '''
     Me when i solve the head equation for a rod.
 
@@ -21,6 +21,8 @@ def solve_heat(xstop=1, tstop=0.2, dx=0.02, dt=0.0002, c2=1):
         size of rod and length of time under consideration
     c2 : float
         c^2 value for heat diffusivity
+    d : bool
+        True if dirichlet boundary conditions, false if naumann
     
     Returns
     -------
@@ -48,6 +50,7 @@ def solve_heat(xstop=1, tstop=0.2, dx=0.02, dt=0.0002, c2=1):
     # Create solution matrix; set init conditions
     U = np.zeros([M,N])
     U[:,0] = 4*x - 4*x**2
+    print(U[:,0])
 
     # get r coeff:
     r = c2 * (dt/dx**2)
@@ -55,14 +58,15 @@ def solve_heat(xstop=1, tstop=0.2, dx=0.02, dt=0.0002, c2=1):
     #solve da eq
     for j in range(N-1):
         U[1:M-1, j+1] = (1-2*r) * U[1:M-1, j] + r*(U[2:M, j] + U[:M-2, j])
-        U[0, j+1] = U[1, j+1]
-        U[M-1, j+1] = U[M-2, j+1]
+        if d: 
+            U[0, j+1] = U[1, j+1]
+            U[M-1, j+1] = U[M-2, j+1]
 
 
     # return to ME@E@E#E!E*E&E^E^E^%%E$%W^E@#$%^&@!*
     return t, x, U
 
-def plot_heatsolvet(t,x,U,title=None, **kwargs):
+def plot_heatsolvet(**kwargs):
     '''
     Plot 2d solution for solve_heat function.
 
@@ -79,22 +83,30 @@ def plot_heatsolvet(t,x,U,title=None, **kwargs):
     '''
 
     # Create and configure figure & axis
-    fig, ax = plt.subplots(1,1, figsize=(8,8))
+    fig, ax = plt.subplots(2,1, figsize=(8,8))
 
      # Check kwargs for defaults
     if 'cmap' not in kwargs:
         kwargs['cmap']='hot'
 
+    tn, xn, un = solve_heat()
+    td, xd, ud = solve_heat(d=True)
+
     # Add contour to axis:
-    contour = ax.pcolor(t, x, U, **kwargs)
-    cbar = plt.colorbar(contour)
+    contourn = ax[0].pcolor(tn, xn, un, **kwargs)
+    contourd = ax[1].pcolor(td, xd, ud, **kwargs)
+    cbarn = plt.colorbar(contourn)
+    cbard = plt.colorbar(contourd)
 
-   
-        
+    cbarn.set_label(r'Temperature ($^{\circ}C$)')
+    cbard.set_label(r'Temperature ($^{\circ}C$)')
+    ax[0].set_xlabel('Time ($s$)')
+    ax[0].set_ylabel('Position ($m$)')
+    ax[1].set_xlabel('Time ($s$)')
+    ax[1].set_ylabel('Position ($m$)')
+    ax[0].set_title('Dirichlet Boundary Conditions Diffusion Example')
+    ax[1].set_title('Neumann Boundary Conditions Diffusion Example')
 
-    cbar.set_label(r'Temperature ($^{\circ}C$)')
-    ax.set_xlabel('Time ($s$)')
-    ax.set_ylabel('Position ($m$)')
-    ax.set_title(title)
+    fig.tight_layout()
 
-    return fig, ax, cbar
+    return fig, ax, cbarn, cbard
