@@ -9,7 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 plt.style.use("seaborn-v0_8")
 
-def solve_heat(xstop=1, tstop=0.2, dx=0.2, dt=0.02, c2=1):
+def solve_heat(xstop=1, tstop=0.2, dx=0.02, dt=0.0002, c2=1):
     '''
     Me when i solve the head equation for a rod.
 
@@ -31,9 +31,14 @@ def solve_heat(xstop=1, tstop=0.2, dx=0.2, dt=0.02, c2=1):
     
     '''
 
+    # Check our stability criterion 
+    dtmax = dx**2 / (2*c2)
+    if dt > dtmax:
+        raise ValueError(f"Danger!!!!!!!!!! dt={dt} > dt_max={dtmax}, stablility criterion not met. Fuck you")
+
     # Get grid sizes:
-    N = int(np.floor(tstop / dt))
-    M = int(np.floor(xstop / dx))
+    N = int(np.floor(tstop / dt)) + 1
+    M = int(np.floor(xstop / dx)) + 1
 
     
     # Set up space and time grid:
@@ -50,6 +55,9 @@ def solve_heat(xstop=1, tstop=0.2, dx=0.2, dt=0.02, c2=1):
     #solve da eq
     for j in range(N-1):
         U[1:M-1, j+1] = (1-2*r) * U[1:M-1, j] + r*(U[2:M, j] + U[:M-2, j])
+        U[0, j+1] = U[1, j+1]
+        U[M-1, j+1] = U[M-2, j+1]
+
 
     # return to ME@E@E#E!E*E&E^E^E^%%E$%W^E@#$%^&@!*
     return t, x, U
