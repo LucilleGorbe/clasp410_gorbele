@@ -10,12 +10,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 plt.style.use("seaborn-v0_8")
 
-def solve_heat(xstop=1, tstop=0.2, dx=0.02, dt=0.0002, c2=0.25*10**-6, d=False):
+
+def solve_heat(func_0, xstop=1, tstop=0.2, dx=0.02, dt=0.0002, 
+               c2=0.25*10**-6, d=False, **kwargs):
     '''
     Solves the 1-dimensional diffusion equation.
 
     Parameters
     ----------
+    func_0 : function
+        A python function that takes `x` as input and returns the initial 
+        conditions of the diffusion example under consideration.
     dx, dt : floats, defaults = 
         Space and time step, respectively
     xstop, tstop : floats, defaults = 
@@ -24,6 +29,7 @@ def solve_heat(xstop=1, tstop=0.2, dx=0.02, dt=0.0002, c2=0.25*10**-6, d=False):
         c^2 value for heat diffusivity
     d : bool, default = False
         True if dirichlet boundary conditions, false if naumann
+    **kwargs : keyword arguments
     
     Returns
     -------
@@ -49,7 +55,7 @@ def solve_heat(xstop=1, tstop=0.2, dx=0.02, dt=0.0002, c2=0.25*10**-6, d=False):
 
     # Create solution matrix; set init conditions
     U = np.zeros([M,N])
-    U[:,0] = 4*x - 4*x**2
+    U[:,0] = func_0(x, **kwargs)
     print(U[:,0])
 
     # get r coeff:
@@ -66,7 +72,28 @@ def solve_heat(xstop=1, tstop=0.2, dx=0.02, dt=0.0002, c2=0.25*10**-6, d=False):
     # return to ME@E@E#E!E*E&E^E^E^%%E$%W^E@#$%^&@!*
     return t, x, U
 
-def plot_heatsolvet(**kwargs):
+def verify_init(x):
+    '''
+    This function calculates the initial temperature conditions across the 
+    vertical profile of the environment for the example of the 1m wire 
+
+    Parameters
+    ----------
+    x : 1-D numpy array
+        Discretization of length of 1m wire.
+
+    Returns
+    -------
+    U_0 : 1-D numpy array
+        Initial temperatures across the 1m wire.
+    '''
+
+    U_0 = 4*x - x**4 # initial temperature distribution in degrees Celsius
+
+    return U_0
+
+
+def verify_heatsolvet(**kwargs):
     '''
     Plot 2d solution for solve_heat function.
 
@@ -89,8 +116,9 @@ def plot_heatsolvet(**kwargs):
     if 'cmap' not in kwargs:
         kwargs['cmap']='hot'
 
-    tn, xn, un = solve_heat()
-    td, xd, ud = solve_heat(d=True)
+    # Solve for heat equation using initial conditions
+    tn, xn, un = solve_heat(verify_init,xstop=1,dx=0.2,tstop=0.2,dt=0.02)
+    td, xd, ud = solve_heat(verify_init,xstop=1,dx=0.2,tstop=0.2,dt=0.02,d=True)
 
     # Add contour to axis:
     contourn = ax[0].pcolor(tn, xn, un, **kwargs)
@@ -110,3 +138,4 @@ def plot_heatsolvet(**kwargs):
     fig.tight_layout()
 
     return fig, ax, cbarn, cbard
+
