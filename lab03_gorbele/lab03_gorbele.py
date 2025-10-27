@@ -10,6 +10,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 plt.style.use("seaborn-v0_8")
 
+# OPTIMIZATIONS TO BE MADE:
+# Code solver to accept input boundary/initial functions and also default to 
+# certain conditions without input to reduce redundant functions.
 
 def solve_heat(func_0, func_ub, func_lb, xstop=100, tstop=50, dx=0.1, 
                dt=1/365., c2=0.25*10**-6, d=False, **kwargs):
@@ -121,8 +124,8 @@ def verify_lbf(t):
 
 def verify_heatsolvet(**kwargs):
     '''
-    Plots example solution for 1-D rod diffusion equation against solver
-    solution to verify solver function.
+    Plots and prints example solution for 1-D rod diffusion equation against 
+    solver solution to verify solver function.
 
     Parameters
     ----------
@@ -132,14 +135,14 @@ def verify_heatsolvet(**kwargs):
     -------
     fig, ax : matplotlib figure and axes objects
         The figure and axes of the plot.
-    cbar : matplotlib color bar object
-        The color bar on the final plot
+    cbar, cbar_ex : matplotlib color bar objects
+        The color bars on the final plot for solver and example, respectively.
     '''
 
     # Create and configure figure & axes
     fig, ax = plt.subplots(2,1, figsize=(8,8))
 
-     # Check kwargs for defaults
+    # Check kwargs for defaults
     if 'cmap' not in kwargs:
         kwargs['cmap']='hot'
 
@@ -167,6 +170,7 @@ def verify_heatsolvet(**kwargs):
     contour_ex = ax.pcolor(t, x, u_ex, **kwargs)
     cbar_ex = plt.colorbar(contour_ex)
 
+    # Label plots for readability
     cbar.set_label(r'Temperature ($^{\circ}C$)')
     ax[0].set_xlabel('Time ($s$)')
     ax[0].set_ylabel('Position ($m$)')
@@ -178,6 +182,7 @@ def verify_heatsolvet(**kwargs):
 
     fig.tight_layout()
 
+    # Print solver and example differences 
     print('Disagreement between solver and example solution:')
     print(u-u_ex)
 
@@ -203,3 +208,57 @@ def temp_kangerlb(t):
     lb = np.zeros(t)
     lb[:] = 5 # degrees Celsius
     return lb
+
+def temp_kanger0(x):
+    '''
+    This function returns the initial temperature conditions across the 
+    vertical profile of the environment at Kangerlussuaq, Greenland.
+    
+    Parameters
+    ----------
+    x : 1-D numpy array
+        Discretization of length of 1m wire.
+
+    Returns
+    -------
+    U_0 : 1-D numpy array
+        Initial temperatures across the vertical profile.
+    '''
+    U_0 = np.zeros(x)
+
+    # Function input required for solver, but solver works to reach eq.
+    # Return vector of zeros, boundary conditions to be overwritten later.
+    return U_0
+
+def kanger_diffusion():
+    '''
+    Plots 1-D diffusion 
+
+    Returns
+    -------
+    fig, ax : matplotlib figure and axes objects
+        The figure and axes of the plot.
+    cbar : matplotlib color bar object
+        The color bar on the final plot
+    '''
+
+    # Get solution using your solver:
+    time, x, U = solve_heat()
+
+    # Create a figure/axes object
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12,8))
+
+    # Create a color map and add a color bar.
+    map = ax1.pcolor(time, x, U, cmap='seismic', vmin=-25, vmax=25)
+    plt.colorbar(map, ax=ax1, label='Temperature ($C$)')
+
+
+
+    # Set indexing for the final year of results:
+    loc = int(-365/dt) # Final 365 days of the result.
+
+    # Extract the min values over the final year:
+    winter = U[:, loc:].min(axis=1)
+
+    # Create a temp profile plot:
+    ax2.plot(winter, x, label='Winter')
