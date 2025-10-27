@@ -121,7 +121,8 @@ def verify_lbf(t):
 
 def verify_heatsolvet(**kwargs):
     '''
-    Plot 2d solution for solve_heat function.
+    Plots example solution for 1-D rod diffusion equation against solver
+    solution to verify solver function.
 
     Parameters
     ----------
@@ -135,28 +136,70 @@ def verify_heatsolvet(**kwargs):
         The color bar on the final plot
     '''
 
-    # Create and configure figure & axis
-    fig, ax = plt.subplots(1,1, figsize=(8,8))
+    # Create and configure figure & axes
+    fig, ax = plt.subplots(2,1, figsize=(8,8))
 
      # Check kwargs for defaults
     if 'cmap' not in kwargs:
         kwargs['cmap']='hot'
 
     # Solve for heat equation using initial conditions
-    t, x, u = solve_heat(verify_initf,func_ub=0, func_lb=0,
+    t, x, u = solve_heat(verify_initf,verify_ubf,verify_lbf,
                          xstop=1,dx=0.2,tstop=0.2,dt=0.02,c2=1)
+    
+    # Comparison solution 
+    u_ex = np.array([[0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.0000, 
+                      0.00000, 0.000000, 0.000000]
+                     [0.64, 0.48, 0.40, 0.32, 0.26, 0.21, 0.17, 0.1375, 
+                        0.11125, 0.090000, 0.072812]
+                     [0.96, 0.80, 0.64, 0.52, 0.42, 0.34, 0.28, 0.2225, 
+                        0.18000, 0.145625, 0.117813]
+                     [0.96, 0.80, 0.64, 0.52, 0.42, 0.34, 0.28, 0.2225, 
+                        0.18000, 0.145625, 0.117813]
+                     [0.64, 0.48, 0.40, 0.32, 0.26, 0.21, 0.17, 0.1375, 
+                        0.11125, 0.090000, 0.072812]
+                     [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.0000, 
+                        0.00000, 0.000000, 0.000000]])
 
     # Add contour to axis:
     contour = ax.pcolor(t, x, u, **kwargs)
     cbar = plt.colorbar(contour)
+    contour_ex = ax.pcolor(t, x, u_ex, **kwargs)
+    cbar_ex = plt.colorbar(contour_ex)
 
     cbar.set_label(r'Temperature ($^{\circ}C$)')
-    ax.set_xlabel('Time ($s$)')
-    ax.set_ylabel('Position ($m$)')
-    ax.set_title('Dirichlet Boundary Conditions Diffusion Example')
+    ax[0].set_xlabel('Time ($s$)')
+    ax[0].set_ylabel('Position ($m$)')
+    ax[0].set_title('Rod Diffusion Verification Solver Solution')
+    cbar_ex.set_label(r'Temperature ($^{\circ}C$)')
+    ax[1].set_xlabel('Time ($s$)')
+    ax[1].set_ylabel('Position ($m$)')
+    ax[1].set_title('Rod Diffusion Verification Example Solution')   
 
     fig.tight_layout()
 
-    return fig, ax, cbar
+    print('Disagreement between solver and example solution:')
+    print(u-u_ex)
 
-# checks if numerically stable- stability criterion already implemented :3
+    return fig, ax, cbar, cbar_ex
+
+# Kangerlussuaq average temperature:
+t_kanger = np.array([-19.7, -21.0, -17., -8.4, 2.3, 8.4,
+                    10.7, 8.5, 3.1, -6.0, -12.0, -16.9])
+
+def temp_kangerup(t):
+    '''
+    For an array of times in days, return timeseries of temperature for
+    Kangerlussuaq, Greenland.
+    '''
+    t_amp = (t_kanger - t_kanger.mean()).max()
+    return t_amp*np.sin(np.pi/180 * t - np.pi/2) + t_kanger.mean()
+
+def temp_kangerlb(t):
+    '''
+    For an array of times in days, return timeseries of temperature for 100m
+    depth under Kangerlussuaq, Greenland.
+    '''
+    lb = np.zeros(t)
+    lb[:] = 5 # degrees Celsius
+    return lb
