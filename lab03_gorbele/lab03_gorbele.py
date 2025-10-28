@@ -43,8 +43,8 @@ def solve_heat(func_0, func_ub, func_lb, xstop=100., tstop=50*365., dx=1,
 
     Returns
     -------
-    x, t : 1D Numpy arrays
-        Space and time values, respectively.
+    t, x : 1D Numpy arrays
+        Time and space values, respectively.
     U : Numpy array
         The solution of the heat equation, size is nSpace x nTime
     '''
@@ -82,7 +82,7 @@ def solve_heat(func_0, func_ub, func_lb, xstop=100., tstop=50*365., dx=1,
             U[0, j+1] = U[1, j+1]
             U[M-1, j+1] = U[M-2, j+1]
 
-    # Return time and osition vectors and temperature array
+    # Return time and position vectors and temperature array
     return t, x, U
 
 
@@ -111,6 +111,16 @@ def verify_ubf(t):
     '''
     Takes time as an input and returns the upper boundary for the verification
     test of the heat solver function, constant 0 degrees Celsius.
+    
+    Parameters
+    ----------
+    t : 1-D numpy array
+        Discretization of time of the simulation.
+
+    Returns
+    -------
+    ub : 1-D numpy array
+        Upper boundary temperature, always 0°C .
     '''
     ub = np.zeros(t.size)
     return ub
@@ -120,6 +130,16 @@ def verify_lbf(t):
     '''
     Takes time as an input and returns the lower boundary for the verification
     test of the heat solver function, constant 0 degrees Celsius.
+    
+    Parameters
+    ----------
+    t : 1-D numpy array
+        Discretization of time of the simulation.
+
+    Returns
+    -------
+    lb : 1-D numpy array
+        Lower boundary temperature, always 0°C .
     '''
     lb = np.zeros(t.size)
     return lb
@@ -196,7 +216,7 @@ def verify_heatsolvet(thresh=1E-6, **kwargs):
 
     # Print solver and example differences
     print('Disagreement between solver and example solution:')
-    print(np.abs(u-u_ex).max() > thresh)
+    print(f'\t{np.abs(u-u_ex).max() > thresh}')
 
     return fig, ax, cbar, cbar_ex
 
@@ -234,7 +254,7 @@ def temp_kanger0(x):
     Parameters
     ----------
     x : 1-D numpy array
-        Discretization of length of 1m wire.
+        Discretization of the soil depth.
 
     Returns
     -------
