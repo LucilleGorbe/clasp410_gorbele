@@ -221,10 +221,12 @@ def verify_heatsolvet(thresh=1E-6, debug=False, **kwargs):
     print(f'\t{np.abs(u-u_ex).max() > thresh}, max difference: {np.abs(u-u_ex).max()}')
 
     if debug:
+        #comparing initial condition
         print('Initial conditions:')
         print(f'\tSolver: {u[:,0]}')
         print(f'\tExample: {u_ex[:,0]} \n')
 
+        #comparing boundary conditions
         print('Upper boundary conditions:')
         print(f'\tSolver: {u[:,-1]}')
         print(f'\tExample: {u_ex[:,-1]} \n')
@@ -233,9 +235,11 @@ def verify_heatsolvet(thresh=1E-6, debug=False, **kwargs):
         print(f'\tSolver: {u[0,:]}')
         print(f'\tExample: {u_ex[0,:]} \n')
 
+        #looking at the difference matrix
         print('Difference matrix:')
         print(np.abs(u-u_ex))
 
+        #imported exact solution from the provided python file test_solution.py
         sol10p3=[[0.000000, 0.640000, 0.960000, 0.960000, 0.640000, 0.000000],
         [0.000000, 0.480000, 0.800000, 0.800000, 0.480000, 0.000000],
         [0.000000, 0.400000, 0.640000, 0.640000, 0.400000, 0.000000],
