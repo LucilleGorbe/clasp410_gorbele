@@ -14,7 +14,8 @@ plt.style.use("seaborn-v0_8")
 # Code solver to accept input boundary/initial functions and also default to 
 # certain conditions without input to reduce redundant functions.
 
-def solve_heat(func_0, func_ub, func_lb, xstop=100., tstop=50*365., dx=0.1, 
+
+def solve_heat(func_0, func_ub, func_lb, xstop=100., tstop=50*365., dx=1, 
                dt=0.1, c2=(0.25*10**-6)*86400, d=False, **kwargs):
     '''
     Solves the 1-dimensional diffusion equation.
@@ -57,15 +58,14 @@ def solve_heat(func_0, func_ub, func_lb, xstop=100., tstop=50*365., dx=0.1,
     N = int(np.floor(tstop / dt)) + 1
     M = int(np.floor(xstop / dx)) + 1
 
-    
     # Set up space and time grid:
     x = np.linspace(0, xstop, M)
     t = np.linspace(0, tstop, N)
 
     # Create solution matrix; set init conditions
     U = np.zeros([M,N])
-    U[:,0] = func_0(x, **kwargs)
-    print(U[:,0])
+    U[:, 0] = func_0(x, **kwargs)
+    print(U[:, 0])
 
     # Set upper boundary conditions across time
     U[0,:] = func_ub(t, **kwargs)
@@ -82,9 +82,9 @@ def solve_heat(func_0, func_ub, func_lb, xstop=100., tstop=50*365., dx=0.1,
             U[0, j+1] = U[1, j+1]
             U[M-1, j+1] = U[M-2, j+1]
 
-
     # Return time and position vectors and temperature array
     return t, x, U
+
 
 def verify_initf(x):
     '''
@@ -106,6 +106,7 @@ def verify_initf(x):
 
     return U_0
 
+
 def verify_ubf(t):
     '''
     Takes time as an input and returns the upper boundary for the verification
@@ -114,6 +115,7 @@ def verify_ubf(t):
     ub = np.zeros(t.size)
     return ub
 
+
 def verify_lbf(t):
     '''
     Takes time as an input and returns the lower boundary for the verification
@@ -121,6 +123,7 @@ def verify_lbf(t):
     '''
     lb = np.zeros(t.size)
     return lb
+
 
 def verify_heatsolvet(**kwargs):
     '''
@@ -140,15 +143,15 @@ def verify_heatsolvet(**kwargs):
     '''
 
     # Create and configure figure & axes
-    fig, ax = plt.subplots(2,1, figsize=(8,8))
+    fig, ax = plt.subplots(2, 1, figsize=(8, 8))
 
     # Check kwargs for defaults
     if 'cmap' not in kwargs:
-        kwargs['cmap']='hot'
+        kwargs['cmap'] = 'hot'
 
     # Solve for heat equation using initial conditions
-    t, x, u = solve_heat(verify_initf,verify_ubf,verify_lbf,
-                         xstop=1,dx=0.2,tstop=0.2,dt=0.02,c2=1)
+    t, x, u = solve_heat(verify_initf, verify_ubf, verify_lbf,
+                         xstop=1, dx=0.2, tstop=0.2, dt=0.02, c2=1)
     
     # Comparison solution 
     u_ex = np.array([[0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.0000, 
@@ -188,9 +191,11 @@ def verify_heatsolvet(**kwargs):
 
     return fig, ax, cbar, cbar_ex
 
+
 # Kangerlussuaq average temperature:
 t_kanger = np.array([-19.7, -21.0, -17., -8.4, 2.3, 8.4,
                     10.7, 8.5, 3.1, -6.0, -12.0, -16.9])
+
 
 def temp_kangerub(t):
     '''
@@ -200,6 +205,7 @@ def temp_kangerub(t):
     t_amp = (t_kanger - t_kanger.mean()).max()
     return t_amp*np.sin(np.pi/182 * t - np.pi/2) + t_kanger.mean()
 
+
 def temp_kangerlb(t):
     '''
     For an array of times in days, return timeseries of temperature for 100m
@@ -208,6 +214,7 @@ def temp_kangerlb(t):
     lb = np.zeros(t.size)
     lb[:] = 5 # degrees Celsius
     return lb
+
 
 def temp_kanger0(x):
     '''
@@ -230,6 +237,7 @@ def temp_kanger0(x):
     # Return vector of zeros, boundary conditions to be overwritten later.
     return U_0
 
+
 def kanger_diffusion():
     '''
     Plots 1-D temperature profile from surface to 100m depth temperatures at 
@@ -245,9 +253,13 @@ def kanger_diffusion():
         The color bar on the final plot
     '''
 
+    dt = 0.2
+    dx = 1
+    tstop = 150*365
+
     # Get solution using solver and defaults:
     time, x, U = solve_heat(func_0=temp_kanger0, func_ub=temp_kangerub, 
-                            func_lb=temp_kangerlb, tstop=2*365,dt=0.01)
+                            func_lb=temp_kangerlb, tstop=tstop, dx=dx, dt=dt)
 
     # ISSUE #3: SOLVED IT WRONG STYLE, I don't know why but it doesn't work well
 
@@ -263,7 +275,6 @@ def kanger_diffusion():
     cbar = plt.colorbar(profile, ax=ax1, label=r'Temperature ($^{\circ}C$)')
 
     # Set indexing for the final year of results:
-    dt=0.1   
     loc = int(-365/dt)
 
     # ISSUE #4: there's an oopsies in that loc thing now and i don't know what
@@ -280,7 +291,7 @@ def kanger_diffusion():
     ax2.set_xlabel(r'Temperature ($^{\circ}C$)')
     ax2.legend(loc='best')
 
+    return fig, (ax1, ax2), cbar
 
 
-
-    # ISSUE #2: NEED TO REVERSE VERTICAL TICK MARKS
+# ISSUE #2: NEED TO REVERSE VERTICAL TICK MARKS
