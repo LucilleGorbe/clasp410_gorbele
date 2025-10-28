@@ -43,8 +43,8 @@ def solve_heat(func_0, func_ub, func_lb, xstop=100., tstop=50*365., dx=1,
 
     Returns
     -------
-    x, t : 1D Numpy arrays
-        Space and time values, respectively.
+    t, x : 1D Numpy arrays
+        Time and space values, respectively.
     U : Numpy array
         The solution of the heat equation, size is nSpace x nTime
     '''
@@ -82,7 +82,7 @@ def solve_heat(func_0, func_ub, func_lb, xstop=100., tstop=50*365., dx=1,
             U[0, j+1] = U[1, j+1]
             U[M-1, j+1] = U[M-2, j+1]
 
-    # Return time and osition vectors and temperature array
+    # Return time and position vectors and temperature array
     return t, x, U
 
 
@@ -111,6 +111,16 @@ def verify_ubf(t):
     '''
     Takes time as an input and returns the upper boundary for the verification
     test of the heat solver function, constant 0 degrees Celsius.
+    
+    Parameters
+    ----------
+    t : 1-D numpy array
+        Discretization of time of the simulation.
+
+    Returns
+    -------
+    ub : 1-D numpy array
+        Upper boundary temperature, always 0°C .
     '''
     ub = np.zeros(t.size)
     return ub
@@ -120,12 +130,22 @@ def verify_lbf(t):
     '''
     Takes time as an input and returns the lower boundary for the verification
     test of the heat solver function, constant 0 degrees Celsius.
+    
+    Parameters
+    ----------
+    t : 1-D numpy array
+        Discretization of time of the simulation.
+
+    Returns
+    -------
+    lb : 1-D numpy array
+        Lower boundary temperature, always 0°C .
     '''
     lb = np.zeros(t.size)
     return lb
 
 
-def verify_heatsolvet(thresh=1E-6, **kwargs):
+def verify_heatsolvet(thresh=1E-6, debug=False, **kwargs):
     '''
     Plots and prints example solution for 1-D rod diffusion equation against
     solver solution to verify solver function.
@@ -161,20 +181,22 @@ def verify_heatsolvet(thresh=1E-6, **kwargs):
                       0.00000, 0.000000, 0.000000],
                      [0.64, 0.48, 0.40, 0.32, 0.26, 0.21, 0.17, 0.1375,
                       0.11125, 0.090000, 0.072812],
-                     [0.96, 0.80, 0.64, 0.52, 0.42, 0.34, 0.28, 0.2225,
+                     [0.96, 0.80, 0.64, 0.52, 0.42, 0.34, 0.275, 0.2225,
                       0.18000, 0.145625, 0.117813],
-                     [0.96, 0.80, 0.64, 0.52, 0.42, 0.34, 0.28, 0.2225,
+                     [0.96, 0.80, 0.64, 0.52, 0.42, 0.34, 0.275, 0.2225,
                       0.18000, 0.145625, 0.117813],
                      [0.64, 0.48, 0.40, 0.32, 0.26, 0.21, 0.17, 0.1375,
                       0.11125, 0.090000, 0.072812],
                      [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.0000,
                       0.00000, 0.000000, 0.000000]])
 
-    # To Do's: add errors exits based on shape of arrays, compare absolute value
-    #if u_ex.shape() != u.shape():
-    #    raise ValueError("Array size mismatch with solver array.")
-    #if (x.shape()[0], t.shape()[0]) != u_ex.shape():
-    #    raise ValueError("Array size mismatch with input vectors.")
+    # Check array sizes match
+    if u.shape[0] != u_ex.shape[0]:
+        raise ValueError("Array size mismatch with space vectors, .")
+    if u.shape[1] != u_ex.shape[1]:
+        raise ValueError("Array size mismatch with time vectors.")
+
+    # To Do's: add errors exits based on shape of arrays, compare absolute values
 
     # Add contour to axis:
     contour = ax[0].pcolor(t, x, u, **kwargs)
@@ -196,7 +218,42 @@ def verify_heatsolvet(thresh=1E-6, **kwargs):
 
     # Print solver and example differences
     print('Disagreement between solver and example solution:')
-    print(np.abs(u-u_ex).max > thresh)
+    print(f'\t{np.abs(u-u_ex).max() > thresh}, max difference: {np.abs(u-u_ex).max()}')
+
+    if debug:
+        #comparing initial condition
+        print('Initial conditions:')
+        print(f'\tSolver: {u[:,0]}')
+        print(f'\tExample: {u_ex[:,0]} \n')
+
+        #comparing boundary conditions
+        print('Upper boundary conditions:')
+        print(f'\tSolver: {u[:,-1]}')
+        print(f'\tExample: {u_ex[:,-1]} \n')
+        
+        print('Lower boundary conditions:')
+        print(f'\tSolver: {u[0,:]}')
+        print(f'\tExample: {u_ex[0,:]} \n')
+
+        #looking at the difference matrix
+        print('Difference matrix:')
+        print(np.abs(u-u_ex))
+
+        #imported exact solution from the provided python file test_solution.py
+        sol10p3=[[0.000000, 0.640000, 0.960000, 0.960000, 0.640000, 0.000000],
+        [0.000000, 0.480000, 0.800000, 0.800000, 0.480000, 0.000000],
+        [0.000000, 0.400000, 0.640000, 0.640000, 0.400000, 0.000000],
+        [0.000000, 0.320000, 0.520000, 0.520000, 0.320000, 0.000000],
+        [0.000000, 0.260000, 0.420000, 0.420000, 0.260000, 0.000000],
+        [0.000000, 0.210000, 0.340000, 0.340000, 0.210000, 0.000000],
+        [0.000000, 0.170000, 0.275000, 0.275000, 0.170000, 0.000000],
+        [0.000000, 0.137500, 0.222500, 0.222500, 0.137500, 0.000000],
+        [0.000000, 0.111250, 0.180000, 0.180000, 0.111250, 0.000000],
+        [0.000000, 0.090000, 0.145625, 0.145625, 0.090000, 0.000000],
+        [0.000000, 0.072812, 0.117813, 0.117813, 0.072812, 0.000000]]
+
+        print('Differences between the original exact solution, and the imported exact solution:')
+        print(np.abs(np.transpose(sol10p3) - u_ex))
 
     return fig, ax, cbar, cbar_ex
 
@@ -234,7 +291,7 @@ def temp_kanger0(x):
     Parameters
     ----------
     x : 1-D numpy array
-        Discretization of length of 1m wire.
+        Discretization of the soil depth.
 
     Returns
     -------
