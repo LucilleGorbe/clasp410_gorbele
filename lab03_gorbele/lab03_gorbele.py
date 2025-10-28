@@ -14,8 +14,8 @@ plt.style.use("seaborn-v0_8")
 # Code solver to accept input boundary/initial functions and also default to 
 # certain conditions without input to reduce redundant functions.
 
-def solve_heat(func_0, func_ub, func_lb, xstop=100, tstop=50, dx=0.1, 
-               dt=1/365., c2=0.25*10**-6, d=False, **kwargs):
+def solve_heat(func_0, func_ub, func_lb, xstop=100., tstop=50*365., dx=0.1, 
+               dt=0.1, c2=(0.25*10**-6)*86400, d=False, **kwargs):
     '''
     Solves the 1-dimensional diffusion equation.
 
@@ -30,11 +30,11 @@ def solve_heat(func_0, func_ub, func_lb, xstop=100, tstop=50, dx=0.1,
     func_lb : function
         A python function that takes `t` as input and returns the lower
         conditions of the diffusion example under consideration.
-    dx, dt : floats, defaults = 0.1m, 1/365. years (1 day)
+    dx, dt : floats, defaults = 0.1m, 0.1 days
         Space and time step, respectively
-    xstop, tstop : floats, defaults = 100m, 50 years
+    xstop, tstop : floats, defaults = 100m, 18,250 days (50 years)
         Length of object and time under consideration
-    c2 : float, default = 0.25 mm^2*s^-1
+    c2 : float, default = 0.25 mm^2*s^-1 (0.0216 m^2*days^-1)
         c^2 value for heat diffusivity
     d : bool, default = False
         True if Dirichlet boundary conditions, false if naumann
@@ -102,7 +102,7 @@ def verify_initf(x):
         Initial temperatures across the 1m wire.
     '''
 
-    U_0 = 4*x - x**4 # initial temperature distribution in degrees Celsius
+    U_0 = 4*x - 4*x**2 # initial temperature distribution in degrees Celsius
 
     return U_0
 
@@ -111,7 +111,7 @@ def verify_ubf(t):
     Takes time as an input and returns the upper boundary for the verification
     test of the heat solver function, constant 0 degrees Celsius.
     '''
-    ub = np.zeros(t)
+    ub = np.zeros(t.size)
     return ub
 
 def verify_lbf(t):
@@ -119,7 +119,7 @@ def verify_lbf(t):
     Takes time as an input and returns the lower boundary for the verification
     test of the heat solver function, constant 0 degrees Celsius.
     '''
-    lb = np.zeros(t)
+    lb = np.zeros(t.size)
     return lb
 
 def verify_heatsolvet(**kwargs):
@@ -152,22 +152,22 @@ def verify_heatsolvet(**kwargs):
     
     # Comparison solution 
     u_ex = np.array([[0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.0000, 
-                      0.00000, 0.000000, 0.000000]
+                      0.00000, 0.000000, 0.000000],
                      [0.64, 0.48, 0.40, 0.32, 0.26, 0.21, 0.17, 0.1375, 
-                        0.11125, 0.090000, 0.072812]
+                        0.11125, 0.090000, 0.072812],
                      [0.96, 0.80, 0.64, 0.52, 0.42, 0.34, 0.28, 0.2225, 
-                        0.18000, 0.145625, 0.117813]
+                        0.18000, 0.145625, 0.117813],
                      [0.96, 0.80, 0.64, 0.52, 0.42, 0.34, 0.28, 0.2225, 
-                        0.18000, 0.145625, 0.117813]
+                        0.18000, 0.145625, 0.117813],
                      [0.64, 0.48, 0.40, 0.32, 0.26, 0.21, 0.17, 0.1375, 
-                        0.11125, 0.090000, 0.072812]
+                        0.11125, 0.090000, 0.072812],
                      [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.0000, 
                         0.00000, 0.000000, 0.000000]])
 
     # Add contour to axis:
-    contour = ax.pcolor(t, x, u, **kwargs)
+    contour = ax[0].pcolor(t, x, u, **kwargs)
     cbar = plt.colorbar(contour)
-    contour_ex = ax.pcolor(t, x, u_ex, **kwargs)
+    contour_ex = ax[1].pcolor(t, x, u_ex, **kwargs)
     cbar_ex = plt.colorbar(contour_ex)
 
     # Label plots for readability
@@ -192,20 +192,20 @@ def verify_heatsolvet(**kwargs):
 t_kanger = np.array([-19.7, -21.0, -17., -8.4, 2.3, 8.4,
                     10.7, 8.5, 3.1, -6.0, -12.0, -16.9])
 
-def temp_kangerup(t):
+def temp_kangerub(t):
     '''
     For an array of times in days, return timeseries of temperature for
     Kangerlussuaq, Greenland.
     '''
     t_amp = (t_kanger - t_kanger.mean()).max()
-    return t_amp*np.sin(np.pi/180 * t - np.pi/2) + t_kanger.mean()
+    return t_amp*np.sin(np.pi/182 * t - np.pi/2) + t_kanger.mean()
 
 def temp_kangerlb(t):
     '''
     For an array of times in days, return timeseries of temperature for 100m
     depth under Kangerlussuaq, Greenland.
     '''
-    lb = np.zeros(t)
+    lb = np.zeros(t.size)
     lb[:] = 5 # degrees Celsius
     return lb
 
@@ -224,7 +224,7 @@ def temp_kanger0(x):
     U_0 : 1-D numpy array
         Initial temperatures across the vertical profile.
     '''
-    U_0 = np.zeros(x)
+    U_0 = np.zeros(x.size)
 
     # Function input required for solver, but solver works to reach eq.
     # Return vector of zeros, boundary conditions to be overwritten later.
@@ -232,7 +232,10 @@ def temp_kanger0(x):
 
 def kanger_diffusion():
     '''
-    Plots 1-D diffusion 
+    Plots 1-D temperature profile from surface to 100m depth temperatures at 
+    Kangerlassuaq, Greenland over time. Plot illustrates permafrost depth and 
+    temperature and structure over time given Neumann boundary conditions
+    as it reaches equilibrium.
 
     Returns
     -------
@@ -242,23 +245,42 @@ def kanger_diffusion():
         The color bar on the final plot
     '''
 
-    # Get solution using your solver:
-    time, x, U = solve_heat()
+    # Get solution using solver and defaults:
+    time, x, U = solve_heat(func_0=temp_kanger0, func_ub=temp_kangerub, 
+                            func_lb=temp_kangerlb, tstop=2*365,dt=0.01)
+
+    # ISSUE #3: SOLVED IT WRONG STYLE, I don't know why but it doesn't work well
 
     # Create a figure/axes object
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12,8))
 
+    # Reverse axes to match depth profile standards
+    ax1.yaxis.set_inverted(True)
+    ax2.yaxis.set_inverted(True)
+
     # Create a color map and add a color bar.
-    map = ax1.pcolor(time, x, U, cmap='seismic', vmin=-25, vmax=25)
-    plt.colorbar(map, ax=ax1, label='Temperature ($C$)')
-
-
+    profile = ax1.pcolor(time, x, U, cmap='seismic', vmin=-25, vmax=25)
+    cbar = plt.colorbar(profile, ax=ax1, label=r'Temperature ($^{\circ}C$)')
 
     # Set indexing for the final year of results:
-    loc = int(-365/dt) # Final 365 days of the result.
+    dt=0.1   
+    loc = int(-365/dt)
 
-    # Extract the min values over the final year:
+    # ISSUE #4: there's an oopsies in that loc thing now and i don't know what
+
+    # Extract the min and max values over the final year per season:
     winter = U[:, loc:].min(axis=1)
+    summer = U[:, loc:].max(axis=1)
 
     # Create a temp profile plot:
-    ax2.plot(winter, x, label='Winter')
+    ax2.plot(winter, x, 'b--', label='Winter')
+    ax2.plot(summer, x, 'r--', label='Summer')
+
+    ax2.set_ylabel('Depth ($m$)')
+    ax2.set_xlabel(r'Temperature ($^{\circ}C$)')
+    ax2.legend(loc='best')
+
+
+
+
+    # ISSUE #2: NEED TO REVERSE VERTICAL TICK MARKS
