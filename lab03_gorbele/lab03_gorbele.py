@@ -145,7 +145,7 @@ def verify_lbf(t):
     return lb
 
 
-def verify_heatsolvet(thresh=1E-6, **kwargs):
+def verify_heatsolvet(thresh=1E-6, debug=False, **kwargs):
     '''
     Plots and prints example solution for 1-D rod diffusion equation against
     solver solution to verify solver function.
@@ -190,11 +190,13 @@ def verify_heatsolvet(thresh=1E-6, **kwargs):
                      [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.0000,
                       0.00000, 0.000000, 0.000000]])
 
-    # To Do's: add errors exits based on shape of arrays, compare absolute value
-    #if u_ex.shape() != u.shape():
-    #    raise ValueError("Array size mismatch with solver array.")
-    #if (x.shape()[0], t.shape()[0]) != u_ex.shape():
-    #    raise ValueError("Array size mismatch with input vectors.")
+    # Check array sizes match
+    if u.shape[0] != u_ex.shape[0]:
+        raise ValueError("Array size mismatch with space vectors, .")
+    if u.shape[1] != u_ex.shape[1]:
+        raise ValueError("Array size mismatch with time vectors.")
+
+    # To Do's: add errors exits based on shape of arrays, compare absolute values
 
     # Add contour to axis:
     contour = ax[0].pcolor(t, x, u, **kwargs)
@@ -216,7 +218,23 @@ def verify_heatsolvet(thresh=1E-6, **kwargs):
 
     # Print solver and example differences
     print('Disagreement between solver and example solution:')
-    print(f'\t{np.abs(u-u_ex).max() > thresh}')
+    print(f'\t{np.abs(u-u_ex).max() > thresh}, max difference: {np.abs(u-u_ex).max()}')
+
+    if debug:
+        print('Initial conditions:')
+        print(f'\tSolver: {u[:,0]}')
+        print(f'\tExample: {u_ex[:,0]} \n')
+
+        print('Upper boundary conditions:')
+        print(f'\tSolver: {u[:,-1]}')
+        print(f'\tExample: {u_ex[:,-1]} \n')
+        
+        print('Lower boundary conditions:')
+        print(f'\tSolver: {u[0,:]}')
+        print(f'\tExample: {u_ex[0,:]} \n')
+
+        print('Difference matrix:')
+        print(np.abs(u-u_ex))
 
     return fig, ax, cbar, cbar_ex
 
