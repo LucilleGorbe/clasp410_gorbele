@@ -196,7 +196,7 @@ def verify_heatsolvet(thresh=1E-6, **kwargs):
 
     # Print solver and example differences
     print('Disagreement between solver and example solution:')
-    print(np.abs(u-u_ex).max > thresh)
+    print(np.abs(u-u_ex).max() > thresh)
 
     return fig, ax, cbar, cbar_ex
 
