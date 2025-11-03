@@ -65,7 +65,7 @@ def solve_heat(func_0, func_ub, func_lb, xstop=100., tstop=50*365., dx=1,
     # Create solution matrix; set init conditions
     U = np.zeros([M, N])
     U[:, 0] = func_0(x, **kwargs)
-    print(U[:, 0])
+    # print(U[:, 0])
 
     # Set upper boundary conditions across time
     U[0, :] = func_ub(t, **kwargs)
@@ -111,6 +111,16 @@ def verify_ubf(t):
     '''
     Takes time as an input and returns the upper boundary for the verification
     test of the heat solver function, constant 0 degrees Celsius.
+
+    Parameters
+    ----------
+    t : numpy array
+        The time vector.
+
+    Returns
+    -------
+    ub : numpy array of zeros
+        The upper boundary condition of the rod.
     '''
     ub = np.zeros(t.size)
     return ub
@@ -120,6 +130,16 @@ def verify_lbf(t):
     '''
     Takes time as an input and returns the lower boundary for the verification
     test of the heat solver function, constant 0 degrees Celsius.
+
+    Parameters
+    ----------
+    t : numpy array
+        The time vector.
+
+    Returns
+    -------
+    lb : numpy array of zeros
+        The lower boundary condition of the rod.
     '''
     lb = np.zeros(t.size)
     return lb
@@ -171,9 +191,9 @@ def verify_heatsolvet(thresh=1E-6, **kwargs):
                       0.00000, 0.000000, 0.000000]])
 
     # To Do's: add errors exits based on shape of arrays, compare absolute value
-    #if u_ex.shape() != u.shape():
+    # if u_ex.shape() != u.shape():
     #    raise ValueError("Array size mismatch with solver array.")
-    #if (x.shape()[0], t.shape()[0]) != u_ex.shape():
+    # if (x.shape()[0], t.shape()[0]) != u_ex.shape():
     #    raise ValueError("Array size mismatch with input vectors.")
 
     # Add contour to axis:
@@ -196,7 +216,7 @@ def verify_heatsolvet(thresh=1E-6, **kwargs):
 
     # Print solver and example differences
     print('Disagreement between solver and example solution:')
-    print(np.abs(u-u_ex).max > thresh)
+    print(np.abs(u-u_ex).max() > thresh)
 
     return fig, ax, cbar, cbar_ex
 
@@ -210,6 +230,15 @@ def temp_kangerub(t):
     '''
     For an array of times in days, return timeseries of temperature for
     Kangerlussuaq, Greenland.
+
+    Parameters
+    ----------
+    t : numpy array
+        The time vector.
+
+    Returns
+    -------
+    1-D numpy array of surface boundary conditions.
     '''
     t_amp = (t_kanger - t_kanger.mean()).max()
     return t_amp*np.sin(np.pi/182 * t - np.pi/2) + t_kanger.mean()
@@ -219,6 +248,16 @@ def temp_kangerlb(t):
     '''
     For an array of times in days, return timeseries of temperature for 100m
     depth under Kangerlussuaq, Greenland in degrees Celsius.
+
+    Parameters
+    ----------
+    t : numpy array
+        The time vector.
+
+    Returns
+    -------
+    lb : 1-D numpy array
+        Geothermal boundary conditions.
     '''
     lb = np.zeros(t.size)
     lb[:] = 5
@@ -248,12 +287,18 @@ def temp_kanger0(x):
     return U_0
 
 
-def kanger_diffusion():
+def kanger_diffusion(dt=0.1, tstop=150*365):
     '''
     Plots 1-D temperature profile from surface to 100m depth temperatures at
     Kangerlassuaq, Greenland over time. Plot illustrates permafrost depth and
     temperature and structure over time given Neumann boundary conditions
     as it reaches equilibrium.
+
+    Parameters
+    ----------
+    dt : float, defaults to 0.1 days
+        dnasjdns
+    tstop : int, defaults to 150 years
 
     Returns
     -------
@@ -263,13 +308,9 @@ def kanger_diffusion():
         The color bar on the final plot.
     '''
 
-    dt = 0.2
-    dx = 1
-    tstop = 150*365
-
     # Get solution using solver and defaults:
     time, x, U = solve_heat(func_0=temp_kanger0, func_ub=temp_kangerub,
-                            func_lb=temp_kangerlb, tstop=tstop, dx=dx, dt=dt)
+                            func_lb=temp_kangerlb, tstop=tstop, dt=dt)
 
     # Create a figure/axes object
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8))
@@ -293,12 +334,21 @@ def kanger_diffusion():
     ax2.plot(winter, x, 'b--', label='Winter')
     ax2.plot(summer, x, 'r--', label='Summer')
 
-    # Label axes to be informative
+    # Create yearly labels for comprehension; make a label every 25 years
+    years = time[::int(25*365/dt)]/365
+    ax1.set_xticks(time[::int(25*365/dt)], labels=years)
+
+    # Axes labels and titles to be informative, include legend for seasons
     ax1.set_title('Ground Temperature Profile by Depth and Time')
+    ax1.set_ylabel('Depth ($m$)')
+    ax1.set_xlabel('Time ($Years$)')
     ax2.set_title('Ground Temperature Profile by Depth and Season')
     ax2.set_ylabel('Depth ($m$)')
     ax2.set_xlabel(r'Temperature ($^{\circ}C$)')
     ax2.legend(loc='best')
+
+    # Make figure more readable
+    fig.tight_layout()
 
     return fig, (ax1, ax2), cbar
 
@@ -307,6 +357,15 @@ def temp_kangerub_05(t):
     '''
     For an array of times in days, return timeseries of temperature for
     Kangerlussuaq, Greenland under 0.5 degrees Celsius warming conditions.
+
+    Parameters
+    ----------
+    t : numpy array
+        The time vector.
+
+    Returns
+    -------
+    1-D numpy array of surface boundary conditions under 0.5 degrees C warming.
     '''
     t_amp = (t_kanger - t_kanger.mean()).max()
     return t_amp*np.sin(np.pi/182 * t - np.pi/2) + t_kanger.mean() + 0.5
@@ -316,6 +375,15 @@ def temp_kangerub_10(t):
     '''
     For an array of times in days, return timeseries of temperature for
     Kangerlussuaq, Greenland under 1.0 degree Celsius warming conditions.
+
+    Parameters
+    ----------
+    t : numpy array
+        The time vector.
+
+    Returns
+    -------
+    1-D numpy array of surface boundary conditions under 1.0 degrees C warming.
     '''
     t_amp = (t_kanger - t_kanger.mean()).max()
     return t_amp*np.sin(np.pi/182 * t - np.pi/2) + t_kanger.mean() + 1.0
@@ -325,27 +393,89 @@ def temp_kangerub_30(t):
     '''
     For an array of times in days, return timeseries of temperature for
     Kangerlussuaq, Greenland under 3.0 degrees Celsius warming conditions.
+
+    Parameters
+    ----------
+    t : numpy array
+        The time vector.
+
+    Returns
+    -------
+    1-D numpy array of surface boundary conditions under 3.0 degrees C warming.
     '''
     t_amp = (t_kanger - t_kanger.mean()).max()
     return t_amp*np.sin(np.pi/182 * t - np.pi/2) + t_kanger.mean() + 3.0
 
 
-def kanger_gw_diffusion():
+def kanger_gw_diffusion(tstop=50*365, dt=0.1):
     '''
     This function...... under global warming conditions.
 
+    Parameters
+    ----------
+    tstop : float, defaults to 50 years (converted to days)
+        the amt of time to call thing reuse from before
+    dt : float, defaults to 0.1 days
+
     Returns
     -------
-    fig, (ax1, ax2, ax3) : matplotlib figure and axes objects
+    fig, (ax1, ax2) : matplotlib figure and axes objects
         The figure and axes of the plot.
     '''
 
     # Create figure and axes objects
-    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(12, 4))
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 4))
 
-    # explode the universe: run the three situations at necessary equilbirum 
-    # reaching times and then use the 2nd part of the plot w/ winter/summer 
+    # explode the universe: run the three situations at necessary equilbirum
+    # reaching times and then use the 2nd part of the plot w/ winter/summer
     # conditions/structure and finish that stuff up!!
 
+    # Allowed to use t and x again because they SHOULDNT change
+    t05, x05, U05 = solve_heat(func_0=temp_kanger0, func_ub=temp_kangerub_05,
+                               func_lb=temp_kangerlb, tstop=tstop, dt=dt)
+    t10, x10, U10 = solve_heat(func_0=temp_kanger0, func_ub=temp_kangerub_10,
+                               func_lb=temp_kangerlb, tstop=tstop, dt=dt)
+    t30, x30, U30 = solve_heat(func_0=temp_kanger0, func_ub=temp_kangerub_30,
+                               func_lb=temp_kangerlb, tstop=tstop, dt=dt)
 
-    return fig, (ax1, ax2, ax3)
+    # Do some valueerror raises to see if different sizes or whatever
+    # Can then allocate t and x to simply t05 and x05 since all same
+    if ((np.shape(U05) != np.shape(U10)) | (np.shape(U05) != np.shape(U30))):
+        raise ValueError("Array sizes are mismatched.")
+
+    t, x = t05, x05
+
+    # Set indexing for the final year of results:
+    loc = int(-365/dt)
+
+    # Extract the min and max values over the final year per season:
+    winter05 = U05[:, loc:].min(axis=1)
+    summer05 = U05[:, loc:].max(axis=1)
+    winter10 = U10[:, loc:].min(axis=1)
+    summer10 = U10[:, loc:].max(axis=1)
+    winter30 = U30[:, loc:].min(axis=1)
+    summer30 = U30[:, loc:].max(axis=1)
+
+    ax2.plot(summer05, x, color='sienna',      label=r'+ 0.5 $^{\circ}C$')
+    ax1.plot(winter05, x, color='sienna',      label=r'+ 0.5 $^{\circ}C$')
+
+    ax2.plot(summer10, x, color='orange',      label=r'+ 1.0 $^{\circ}C$')
+    ax1.plot(winter10, x, color='orange',      label=r'+ 1.0 $^{\circ}C$')
+
+    ax2.plot(summer30, x, color='deepskyblue', label=r'+ 3.0 $^{\circ}C$')
+    ax1.plot(winter30, x, color='deepskyblue', label=r'+ 3.0 $^{\circ}C$')
+
+    for ax in (ax1, ax2):
+        ax.set_xlabel(r'Temperature ($^{\circ}C$)')
+        ax.set_ylabel('Depth ($m$)')
+        ax.vlines(0, 0, 100, linestyles='dashed', color='gray')
+        ax.yaxis.set_inverted(True)
+
+    ax2.set_title('Summer Ground Temperature Profile\nby Depth Under Warming Regimes')
+    ax1.set_title('Winter Ground Temperature Profile\nby Depth Under Warming Regimes')
+    ax1.legend(loc='best')
+    ax2.legend(loc='lower right')
+
+    fig.tight_layout()
+
+    return fig, ax
