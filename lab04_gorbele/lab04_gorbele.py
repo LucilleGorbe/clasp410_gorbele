@@ -49,27 +49,34 @@ def spread(nstep=4, isize=3, jsize=3, pspread=1.0):
 
     # Set initial fire on center [UPDATE FOR LAB LATER]
     area[0, isize//2, jsize//2] = 3
-    time = np.arange(nstep)
 
-    for i in range(isize):
-        for j in range(jsize):
-            # is there fire????
-            if area[t, i, j] != 3:
-                # Skip past this lil guy
-                continue
-            #pain and fire spreading time
-            #criteria to check: only spread to forest
-            # do not exceed bounds
-            if pspread > random.rand() & i>0 & area[t, i-1, j] == 2:
-                area[t, i-1, j] = 3
-            if pspread > random.rand() & i<isize & area[t, i+1, j] == 2:
-                area[t, i+1, j] = 3
-            if pspread > random.rand() & j>0 & area[t, i, j-1] == 2:
-                area[t, i, j-1] = 3
-            if pspread > random.rand() & j<jsize & area[t, i, j+1] == 2:
-                area[t, i, j+1] = 3
+    for t in range(nstep-1):
+        area[t+1, :, :] = area[t, :, :]
+        for i in range(isize):
+            for j in range(jsize):
+                # is there fire????
+                if area[t, i, j] != 3:
+                    # Skip past this lil guy
+                    continue
+                #pain and fire spreading time
+                #criteria to check: only spread to forest
+                # do not exceed bounds
+                # Spread north
+                if (pspread > random.rand()) & (i > 0    ) & (area[t, i-1, j] == 2):
+                    area[t+1, i-1, j] = 3
+                # Spread south
+                if (pspread > random.rand()) & (i < isize) & (area[t, i+1, j] == 2):
+                    area[t+1, i+1, j] = 3
+                # Spread west
+                if (pspread > random.rand()) & (j > 0    ) & (area[t, i, j-1] == 2):
+                    area[t+1, i, j-1] = 3
+                # Spread east
+                if (pspread > random.rand()) & (j < jsize) & (area[t, i, j+1] == 2):
+                    area[t+1, i, j+1] = 3
 
-            spreadcheck(area[t:t+1, i-1:i+2, j-1:j+2], i, j, pspread)
+                # make that bare!
+                area[t+1, i, j] = 1
+
 
 
 
