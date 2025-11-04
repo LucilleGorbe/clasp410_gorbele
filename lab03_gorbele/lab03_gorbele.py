@@ -4,6 +4,23 @@
 This file solves the diffusion equation for Lab 03 and all subparts.
 
 TO REPRODUCE THE VALUES AND PLOTS IN MY REPORT, DO THIS:
+Ensure that any libraries imported below are installed to the user's
+instance of python3.
+In a terminal window opened to the directory (folder) that has this script
+and is running python, enter `$ run lab03_gorbele.py`. The $ sign is not typed
+by the user, but indicates where shell input begins.
+
+Plots and results can be obtained by running the commands:
+`$ verify_heatsolve()`, which addresses science question #1.
+`$ kanger_diffusion()`, which addresses science question #2, and
+`$ kanger_gw_diffusion()`, which adresses science question #3.
+Plots are saved with descriptive names and are labelled.
+To show the plots from the terminal, after running one of these commands,
+the user can run `$ plt.show()` to display the current plot.
+
+Note that, until the plot is closed or unless interactive mode is turned on,
+the terminal will be occupied running the plot and will not
+be able to run any additional functions.
 '''
 
 import numpy as np
@@ -15,8 +32,8 @@ plt.style.use("seaborn-v0_8")
 # certain conditions without input to reduce redundant functions.
 
 
-def solve_heat(func_0, func_ub, func_lb, xstop=100., tstop=50*365., dx=1,
-               dt=0.1, c2=(0.25*10**-6)*86400, d=False, **kwargs):
+def solve_heat(func_0, func_ub, func_lb, xstop=100., tstop=150*365., dx=1,
+               dt=0.1, c2=(0.25*10**-6)*86400, n=False, **kwargs):
     '''
     Solves the 1-dimensional diffusion equation.
 
@@ -37,8 +54,8 @@ def solve_heat(func_0, func_ub, func_lb, xstop=100., tstop=50*365., dx=1,
         Length of object and time under consideration
     c2 : float, default = 0.25 mm^2*s^-1 (0.0216 m^2*days^-1)
         c^2 value for heat diffusivity
-    d : bool, default = False
-        True if Dirichlet boundary conditions, false if naumann
+    n : bool, default = False
+        True if Neumann boundary conditions, false if Dirichlet
     **kwargs : keyword arguments
 
     Returns
@@ -77,14 +94,16 @@ def solve_heat(func_0, func_ub, func_lb, xstop=100., tstop=50*365., dx=1,
     # Solve heat equation
     for j in range(N-1):
         U[1:M-1, j+1] = (1-2*r) * U[1:M-1, j] + r*(U[2:M, j] + U[:M-2, j])
-        # Use Dirichlet conditions as applicable
-        if d:
+        # Use Neumann conditions as applicable
+        if n:
             U[0, j+1] = U[1, j+1]
             U[M-1, j+1] = U[M-2, j+1]
 
-    # Return time and osition vectors and temperature array
+    # Return time and position vectors, and temperature array
     return t, x, U
 
+
+# ---------------- Provide initial conditions for Rod problem ----------------
 
 def verify_initf(x):
     '''
@@ -145,14 +164,16 @@ def verify_lbf(t):
     return lb
 
 
-def verify_heatsolvet(thresh=1E-6, **kwargs):
+# --------------------------- Rod Problem Verifier ----------------------------
+
+def verify_heatsolve(thresh=1E-2, **kwargs):
     '''
     Plots and prints example solution for 1-D rod diffusion equation against
     solver solution to verify solver function.
 
     Parameters
     ----------
-    thresh : float
+    thresh : float, defaults to 0.01
         Threshold for floating point differences when comparing solver
         solution and example solution.
     **kwargs : keyword arguments
@@ -216,10 +237,13 @@ def verify_heatsolvet(thresh=1E-6, **kwargs):
 
     # Print solver and example differences
     print('Disagreement between solver and example solution:')
+    print(np.abs(u-u_ex) > thresh)
     print(np.abs(u-u_ex).max() > thresh)
 
     return fig, ax, cbar, cbar_ex
 
+
+# ------ Provide initial conditions for Kangerlussuaq Permafrost problem ------
 
 # Kangerlussuaq average temperature:
 t_kanger = np.array([-19.7, -21.0, -17., -8.4, 2.3, 8.4,
@@ -287,18 +311,21 @@ def temp_kanger0(x):
     return U_0
 
 
+# ---------------------- Kangerlassuaq Permafrost Solver ----------------------
+
 def kanger_diffusion(dt=0.1, tstop=150*365):
     '''
     Plots 1-D temperature profile from surface to 100m depth temperatures at
-    Kangerlassuaq, Greenland over time. Plot illustrates permafrost depth and
-    temperature and structure over time given Neumann boundary conditions
-    as it reaches equilibrium.
+    Kangerlassuaq, Greenland over time and between seasons at equilibrium.
+    Plot illustrates permafrost depth and temperature and structure
+    over time given Dirichlet boundary conditions as it reaches equilibrium.
 
     Parameters
     ----------
     dt : float, defaults to 0.1 days
-        dnasjdns
+        Time step passed to heat solver.
     tstop : int, defaults to 150 years
+        Stopping time passed to heat solver.
 
     Returns
     -------
@@ -352,6 +379,8 @@ def kanger_diffusion(dt=0.1, tstop=150*365):
 
     return fig, (ax1, ax2), cbar
 
+
+# ----- Provide initial conditions for Global Warming Permafrost problem ------
 
 def temp_kangerub_05(t):
     '''
@@ -407,9 +436,12 @@ def temp_kangerub_30(t):
     return t_amp*np.sin(np.pi/182 * t - np.pi/2) + t_kanger.mean() + 3.0
 
 
+# --------------------- Global Warming Permafrost Solver ----------------------
+
 def kanger_gw_diffusion(tstop=50*365, dt=0.1):
     '''
-    This function...... under global warming conditions.
+    Plots 1-D equilibrium temperature profile from surface to 100m depth at
+    Kangerlassuaq, Greenland time under different global warming conditions.
 
     Parameters
     ----------
@@ -439,11 +471,12 @@ def kanger_gw_diffusion(tstop=50*365, dt=0.1):
                                func_lb=temp_kangerlb, tstop=tstop, dt=dt)
 
     # Do some valueerror raises to see if different sizes or whatever
-    # Can then allocate t and x to simply t05 and x05 since all same
+    # Can then allocate x to simply x05 since all are same
     if ((np.shape(U05) != np.shape(U10)) | (np.shape(U05) != np.shape(U30))):
         raise ValueError("Array sizes are mismatched.")
 
-    t, x = t05, x05
+    # Allocate common x variable
+    x = x05
 
     # Set indexing for the final year of results:
     loc = int(-365/dt)
@@ -456,6 +489,7 @@ def kanger_gw_diffusion(tstop=50*365, dt=0.1):
     winter30 = U30[:, loc:].min(axis=1)
     summer30 = U30[:, loc:].max(axis=1)
 
+    # Plot the profiles on their separate plots
     ax2.plot(summer05, x, color='sienna',      label=r'+ 0.5 $^{\circ}C$')
     ax1.plot(winter05, x, color='sienna',      label=r'+ 0.5 $^{\circ}C$')
 
@@ -465,12 +499,14 @@ def kanger_gw_diffusion(tstop=50*365, dt=0.1):
     ax2.plot(summer30, x, color='deepskyblue', label=r'+ 3.0 $^{\circ}C$')
     ax1.plot(winter30, x, color='deepskyblue', label=r'+ 3.0 $^{\circ}C$')
 
+    # Provide labels for the axes and a vertical line to indicate 0 degrees
     for ax in (ax1, ax2):
         ax.set_xlabel(r'Temperature ($^{\circ}C$)')
         ax.set_ylabel('Depth ($m$)')
         ax.vlines(0, 0, 100, linestyles='dashed', color='gray')
         ax.yaxis.set_inverted(True)
 
+    # Provide legends and titles for interpretation
     ax2.set_title('Summer Ground Temperature Profile\nby Depth Under Warming Regimes')
     ax1.set_title('Winter Ground Temperature Profile\nby Depth Under Warming Regimes')
     ax1.legend(loc='best')
