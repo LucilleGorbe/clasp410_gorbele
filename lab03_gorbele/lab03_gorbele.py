@@ -211,11 +211,9 @@ def verify_heatsolve(thresh=1E-2, **kwargs):
                      [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.0000,
                       0.00000, 0.000000, 0.000000]])
 
-    # To Do's: add errors exits based on shape of arrays, compare absolute value
-    # if u_ex.shape() != u.shape():
-    #    raise ValueError("Array size mismatch with solver array.")
-    # if (x.shape()[0], t.shape()[0]) != u_ex.shape():
-    #    raise ValueError("Array size mismatch with input vectors.")
+    # Exit if on mismatches
+    if (np.shape(u_ex) != np.shape(u)):
+        raise ValueError("Array size mismatch with solver array.")
 
     # Add contour to axis:
     contour = ax[0].pcolor(t, x, u, **kwargs)
@@ -235,9 +233,8 @@ def verify_heatsolve(thresh=1E-2, **kwargs):
 
     fig.tight_layout()
 
-    # Print solver and example differences
-    print('Disagreement between solver and example solution:')
-    print(np.abs(u-u_ex) > thresh)
+    # Check if example solution agrees with solver solution
+    print('Is there disagreement between solver and example solution?')
     print(np.abs(u-u_ex).max() > thresh)
 
     return fig, ax, cbar, cbar_ex
