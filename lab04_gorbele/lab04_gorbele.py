@@ -26,12 +26,23 @@ be able to run any additional functions.
 import numpy as np
 import matplotlib.pyplot as plt
 from numpy.random import rand
+from matplotlib.colors import ListedColormap
 plt.style.use("seaborn-v0_8")
 
+# Generate custom segmented colormap for this project
+# can specify colors by names and hex codes
+colors = ['tan', 'forestgreen', 'crimson']
+forest_cmap = ListedColormap(colors)
 
-def spread(nstep=4, isize=3, jsize=3, pspread=1.0, pignite=0.1, pbare=0):
+colors = ['darkslategrey', 'turquoise', 'charteuse', 'crimson']
+disease_cmap = ListedColormap(colors)
+
+
+def spread(nstep=4, isize=3, jsize=3, pspread=1.0, pignite=0., pbare0=0.,
+           pimmune=1.):
     '''
-    Me when my fire is spreading
+    Me when my fire is spreading. Also adaptable for disease modelling spread 
+    with different interpretations of the states.
 
     Parameters
     ----------
@@ -43,16 +54,20 @@ def spread(nstep=4, isize=3, jsize=3, pspread=1.0, pignite=0.1, pbare=0):
         Sets chance that fire will spread.
     pignite : float, defaults to 0.1
         Sets chance that each cell will be a source of forest fire ignition.
+    pbare0 : float, defaults to 0.0
+        Sets chance that each cell will be barren of forest at t=0.
+    pimmune : float, defaults to 1.0
+        Sets chance that each cell will become immune/barren, and is the
+        effective 'toggle' between forest fire and disease simulation. By 
+        lowering this value, toggle death chance 'on'.
     '''
 
-    # Create our little guys and make them all normalsauce
+    # Create initial forest/healthy population
     area = np.zeros((nstep, isize, jsize)) + 2
-
-    # if nothing is on fire, stop! return only the on-fire steps to reduce load
 
     # Set initial conditions for burning/infected and bare/immune
     # Set bare/immune first:
-    bare = pbare > rand(isize, jsize)
+    bare = pbare0 > rand(isize, jsize)
     area[0, bare] = 1
 
     # Now for burning/infected, include singular ignition point test case
@@ -68,94 +83,69 @@ def spread(nstep=4, isize=3, jsize=3, pspread=1.0, pignite=0.1, pbare=0):
         print(f"Starting with {ignite.sum()} points on fire or infected.")
         area[0, ignite] = 3
 
-    perconv = 100. / (isize * jsize)
-
-    perfire = np.zeros(nstep)
-    perfire[0] = (area[0, :, :] == 3).sum * perconv
-    perforest = np.zeros(nstep)
-    perforest[0] = (area[0, :, :] == 2).sum * perconv
-    perbare = np.zeros(nstep)
-    perbare[0] = (area[0, :, :] == 1).sum * perconv
-    perdead = np.zeros(nstep)
-
-    # run thru time....
+    # Run through time
     for t in range(nstep-1):
+        # Check: if there are no active fires/cases, exit loop early
         if (area[t, :, :] == 3).sum() == 0:
+            # set all future time steps to current time step
+            area[t:] = area[t]
             print(f"No more tiles on fire; simulation terminated early at t={t}")
             break
+
         # Initialize next time step as current time step
         area[t+1, :, :] = area[t, :, :]
+        now = area[t, :, :]
 
-        # Make arrays of all tiles that can spread
-        can_spread_n = pspread > rand(isize, jsize)
-        can_spread_s = pspread > rand(isize, jsize)
-        can_spread_w = pspread > rand(isize, jsize)
-        can_spread_e = pspread > rand(isize, jsize)
+        # Create shifted arrays that allow for better logical indexing
+        # Essentially, move all non-boundaries one step closer to boundaries
+        # and fill opened slot with 0 to prevent spreading past boundaries
+        nsplit = np.vstack((np.zeros(jsize), now[:-1, :]))
+        ssplit = np.vstack((now[1:, :], np.zeros(jsize)))
+        wsplit = np.hstack((np.zeros(isize).reshape(isize, 1), now[:, :-1]))
+        esplit = np.hstack((now[:, 1:], np.zeros(isize).reshape(isize, 1)))
 
-        # Set boundaries to be unable to spread beyond boundaries
-        can_spread_n[0, :] = False
-        can_spread_s[-1, :] = False
-        can_spread_w[:, 0] = False
-        can_spread_e[:, -1] = False
+        # Make arrays of all tiles that can spread:
+        # Fit chance criteria, Is on fire, and Neighbor is forest/healthy
+        can_spread_n = (pspread > rand(isize, jsize)) & (now == 3) & (nsplit == 2)
+        can_spread_s = (pspread > rand(isize, jsize)) & (now == 3) & (ssplit == 2)
+        can_spread_w = (pspread > rand(isize, jsize)) & (now == 3) & (wsplit == 2)
+        can_spread_e = (pspread > rand(isize, jsize)) & (now == 3) & (esplit == 2)
 
-        # grab locations of fires
-        fires = np.transpose((area[t, :, :] == 3).nonzero())
-        
+        # grab locations of fires/cases
+        sp_n = (can_spread_n).nonzero()
+        sp_s = (can_spread_s).nonzero()
+        sp_w = (can_spread_w).nonzero()
+        sp_e = (can_spread_e).nonzero()
+
         # Spread (while checking if it can spread)
-        area[t+1, fires & can_spread_n] = 3
+        area[t+1, sp_n[0]-1, sp_n[1]] = 3
+        area[t+1, sp_s[0]+1, sp_s[1]] = 3
+        area[t+1, sp_w[0], sp_w[1]-1] = 3
+        area[t+1, sp_e[0], sp_e[1]+1] = 3
 
-        #for f in fires:
-            #f[0]
+        # Active fires/cases will become barren/immune (or dead).
+        # Uses immune chance rather than death chance because
+        # rand() includes 0 but not 1.
+        # 1: Barren/Immune, 0: Dead
+        area[t+1, now == 3] = (1 * int(pimmune > rand()))
 
-        #for i in range(isize):
-            #for j in range(jsize):
-
-                # is there fire????
-                #if area[t, i, j] != 3:
-                    # Skip past this lil guy
-                    #continue
-
-                # pain and fire spreading time
-                # criteria to check: only spread to forest
-                # do not exceed bounds
-                # Spread north
-                #if (pspread > rand()) & (i > 0    ) & (area[t, i-1, j] == 2):
-                #    area[t+1, i-1, j] = 3
-                ## Spread south
-                #if (pspread > rand()) & (i < isize) & (area[t, i+1, j] == 2):
-                #    area[t+1, i+1, j] = 3
-                ## Spread west
-                #if (pspread > rand()) & (j > 0    ) & (area[t, i, j-1] == 2):
-                #    area[t+1, i, j-1] = 3
-                ## Spread east
-                #if (pspread > rand()) & (j < jsize) & (area[t, i, j+1] == 2):
-                #    area[t+1, i, j+1] = 3
-
-                #make this better w/ logical indexing, make a random thingymabob
-                #pchance > rand & awesome > true !!
-
-                # make that bare!
-                #area[t+1, i, j] = 1
-        # report percentage of forest on fire, barren, and forested
-        
+    return area
 
 
-    #tasks:
-    #initialize fire randomly or by cell (DONE)
-    # set bare (immune) randomly (DONE)
-    # track percent of forest burning, bare, and forested (DONE)
-    # make cool plot
-
-
-def plot_progression(forest):
+def plot_fprogression(forest):
     '''
-    report and plot the percentages of things across time
+    Calculate the time dynamics of a forest fire and plot them.
     '''
 
+    # Get total number of points and make percentage conversion constant
     ksize, isize, jsize = forest.shape()
-
     perconv = 100. / (isize * jsize)
 
+    # Create figure and axis objects
+    fig, ax = plt.subplots(1, 1, figsize=(6, 4))
+
+    # Find all spots that have forests (or are healthy people)
+    # ...and count them as a function of time.
     loc = forest == 2
     forested = loc.sum(axis=(1, 2)) * perconv
 
@@ -165,16 +155,139 @@ def plot_progression(forest):
     loc = forest == 1
     bare = loc.sum(axis=(1, 2)) * perconv
 
-    plt.plot(forested, label='Forested')
-    plt.plot(fire, label='On Fire')
-    plt.plot(bare, label='Bare')
-    plt.xlabel('Time ($UNITS$)')  # fill units later
-    plt.ylabel('Percent')
+    # Plot these
+    ax.plot(forested, label='Forested')
+    ax.plot(fire, label='On Fire')
+    ax.plot(bare, label='Bare')
+    ax.set_xlabel('Time ($Skoogle-Seconds$)')
+    ax.set_ylabel('Percent %')
+
+    return fig
 
 
-def plot_forest2d():
+def plot_forest2d(forest_in, itime=0):
     '''
-    Plot the awesome file and stuff
+    Given a forest of size (ntime, nx, ny), plot the itime-th moment as a
+    2d pcolor plot.
+
+    Parameters
+    ----------
+    forest_in : numpy array
+        anjdnjsa
+    itime : int, defaults to 0
+        dbhasbdhsabdhas
     '''
 
-    pass
+    # Create figure and axes
+    fig, ax = plt.subplots(1, 1, figsize=(6, 8))
+
+    # Add our pcolor plot, save the resulting mappable object.
+    map = ax.pcolor(forest_in[itime, :, :], vmin=1, vmax=3, cmap=forest_cmap)
+
+    # Add a colorbar by handing our mappable to the colorbar function.
+    cbar = plt.colorbar(map, ax=ax, shrink=.8, fraction=.08,
+                        location='bottom', orientation='horizontal')
+    cbar.set_ticks([1, 2, 3])
+    cbar.set_ticklabels(['Bare/Burnt', 'Forested', 'Burning'])
+
+    # Flip y-axis (corresponding to matrix's x direction and label stuff)
+    ax.invert_yaxis()
+    ax.set_xlabel('Y Coordinate ($lightyears$) $\\longrightarrow$')
+    ax.set_ylabel('X Coordinate ($lightyears$) $\\longrightarrow$')
+    ax.set_title(f'The So Many Woods at T={itime:03d}')
+
+    # Return figure object to caller
+    return fig
+
+
+def make_all_2dplots(forest_in, folder='results/'):
+    '''
+    For every time frame in `forest_in`, create a 2D plot and save the image
+    in folder.
+    '''
+
+    import os
+
+    # Check to see if folder exists, if not, make it.
+    if not os.path.exists(folder):
+        os.mkdir(folder)
+
+    # Make each plot by time step
+    ntime, nx, ny = forest_in.shape
+    for i in range(ntime):
+        print(f"\tWorking on plot #{i:04d}")
+        fig = plot_forest2d(forest_in, itime=i)
+        fig.savefig(f"{folder}/forest_i{i:04d}.png")
+        plt.close('all')
+
+
+def plot_dprogression(population):
+    '''
+    Calculate the time dynamics of a disease and plot them.
+    '''
+
+    # Get total number of points and make percentage conversion constant
+    ksize, isize, jsize = population.shape()
+    perconv = 100. / (isize * jsize)
+
+    # Create figure and axis objects
+    fig, ax = plt.subplots(1, 1, figsize=(6, 4))
+
+    # Find all spots that have forests (or are healthy people)
+    # ...and count them as a function of time.
+    loc = population == 2
+    healthy = loc.sum(axis=(1, 2)) * perconv
+
+    loc = population == 3
+    infected = loc.sum(axis=(1, 2)) * perconv
+
+    loc = population == 1
+    immune = loc.sum(axis=(1, 2)) * perconv
+
+    loc = population == 0
+    deceased = loc.sum(axis=(1, 2)) * perconv
+
+    # Plot the population disease dynamics by time.
+    ax.plot(healthy, label='Healthy')
+    ax.plot(infected, label='Infected')
+    ax.plot(immune, label='Immune')
+    ax.plot(deceased, label='Deceased')
+    ax.set_xlabel('Time ($Skoogle-Seconds$)')
+    ax.set_ylabel('Percent %')
+
+    return fig
+
+
+def plot_forest2d(forest_in, itime=0):
+    '''
+    Given a forest of size (ntime, nx, ny), plot the itime-th moment as a
+    2d pcolor plot.
+
+    Parameters
+    ----------
+    population_in : numpy array
+        anjdnjsa
+    itime : int, defaults to 0
+        dbhasbdhsabdhas
+    '''
+
+    # Create figure and axes
+    fig, ax = plt.subplots(1, 1, figsize=(6, 8))
+
+    # Add our pcolor plot, save the resulting mappable object.
+    map = ax.pcolor(forest_in[itime, :, :], vmin=1, vmax=3, cmap=forest_cmap)
+
+    # Add a colorbar by handing our mappable to the colorbar function.
+    cbar = plt.colorbar(map, ax=ax, shrink=.8, fraction=.08,
+                        location='bottom', orientation='horizontal')
+    cbar.set_ticks([0, 1, 2, 3])
+    cbar.set_ticklabels(['Deceased', 'Immune', 'Healthy', 'Infected'])
+
+    # Flip y-axis (corresponding to matrix's x direction and label stuff)
+    ax.invert_yaxis()
+    ax.set_xlabel('Y Coordinate ($lightyears$) $\\longrightarrow$')
+    ax.set_ylabel('X Coordinate ($lightyears$) $\\longrightarrow$')
+    ax.set_title(f"Jeremy's Disease Emporium at T={itime:03d}")
+
+    # Return figure object to caller
+    return fig
