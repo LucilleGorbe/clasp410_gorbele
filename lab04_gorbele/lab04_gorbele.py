@@ -85,13 +85,27 @@ def spread(nstep=4, isize=3, jsize=3, pspread=1.0, pignite=0.1, pbare=0):
             break
         # Initialize next time step as current time step
         area[t+1, :, :] = area[t, :, :]
-        can_spread = pspread > rand(isize, jsize)
+
+        # Make arrays of all tiles that can spread
+        can_spread_n = pspread > rand(isize, jsize)
+        can_spread_s = pspread > rand(isize, jsize)
+        can_spread_w = pspread > rand(isize, jsize)
+        can_spread_e = pspread > rand(isize, jsize)
+
+        # Set boundaries to be unable to spread beyond boundaries
+        can_spread_n[0, :] = False
+        can_spread_s[-1, :] = False
+        can_spread_w[:, 0] = False
+        can_spread_e[:, -1] = False
+
         # grab locations of fires
         fires = np.transpose((area[t, :, :] == 3).nonzero())
         
-        #check the boundaries of the fires and execute commands off of those
-        for f in fires:
+        # Spread (while checking if it can spread)
+        area[t+1, fires & can_spread_n] = 3
 
+        #for f in fires:
+            #f[0]
 
         #for i in range(isize):
             #for j in range(jsize):
