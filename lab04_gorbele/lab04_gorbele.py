@@ -209,9 +209,9 @@ def plot_fprogression(forest):
     dist = fprogression(forest)
 
     # Plot these dynamics
-    ax.plot(dist[0], label='Bare', color=forest_cmap[0])
-    ax.plot(dist[1], label='Forested', color=forest_cmap[1])
-    ax.plot(dist[2], label='On Fire', color=forest_cmap[2])
+    ax.plot(dist[0], label='Bare', color=fcolors[0])
+    ax.plot(dist[1], label='Forested', color=fcolors[1])
+    ax.plot(dist[2], label='On Fire', color=fcolors[2])
 
     # Appropriately label plot
     ax.set_xlabel('Time ($Skoogle-Seconds$)')
@@ -342,10 +342,10 @@ def plot_dprogression(population):
     dist = dprogression(population)
 
     # Plot the population disease dynamics by time.
-    ax.plot(dist[0], label='Deceased', color=disease_cmap[0])
-    ax.plot(dist[1], label='Immune', color=disease_cmap[1])
-    ax.plot(dist[2], label='Healthy', color=disease_cmap[2])
-    ax.plot(dist[3], label='Infected', color=disease_cmap[3])
+    ax.plot(dist[0], label='Deceased', color=dcolors[0])
+    ax.plot(dist[1], label='Immune', color=dcolors[1])
+    ax.plot(dist[2], label='Healthy', color=dcolors[2])
+    ax.plot(dist[3], label='Infected', color=dcolors[3])
 
     # Appropriately label plot
     ax.set_xlabel('Time ($Skoogle-Seconds$)')
@@ -499,7 +499,7 @@ def compare_pspread_pbare(num=10):
     return fig
 
 
-def compare_psurvive_immune(num=10):
+def compare_psurvive_pimmune(num=10):
     '''
     Parameters
     ----------
@@ -578,7 +578,7 @@ def compare_psurvive_immune(num=10):
     # Normalize y limit and appropriately label plot
     ax2.set_ylim(0, 100)
     ax2.set_ylabel('Percentage (%)')
-    ax2.set_xlabel(r'$P_{bare}$')
+    ax2.set_xlabel(r'$P_{immune}$')
     ax2.set_title(rf'{nstep}-Step Population Makeup by $Pimmune$ ($Psurvive={psurvive_test}$)')
     ax2.legend(loc='best')
 
