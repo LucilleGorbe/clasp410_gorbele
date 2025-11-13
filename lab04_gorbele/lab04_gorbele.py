@@ -186,7 +186,7 @@ def fprogression(forest):
         Percentages of the population that each disease status holds over time.
     '''
     # Get total number of points and make percentage conversion constant
-    ksize, isize, jsize = forest.shape()
+    ksize, isize, jsize = forest.shape
     perconv = 100. / (isize * jsize)
 
     # Find all spots that have forests (or are healthy people)
@@ -218,9 +218,14 @@ def plot_fprogression(forest):
     ax.plot(dist[0], label='Bare')
     ax.plot(dist[1], label='On Fire')
     ax.plot(dist[2], label='Forested')
+
+    # Appropriately label plot
     ax.set_xlabel('Time ($Skoogle-Seconds$)')
     ax.set_ylabel('Percent %')
+    ax.legend(loc='best')
+    ax.set_title('Forest Fire Dynamics of the So Many Woods over Time')
 
+    # Return figure to caller
     return fig
 
 
@@ -301,7 +306,7 @@ def dprogression(population):
     '''
 
     # Get total number of points and make percentage conversion constant
-    ksize, isize, jsize = population.shape()
+    ksize, isize, jsize = population.shape
     perconv = 100. / (isize * jsize)
 
     # Find all spots that have forests (or are healthy people)
@@ -347,9 +352,14 @@ def plot_dprogression(population):
     ax.plot(dist[1], label='Immune')
     ax.plot(dist[2], label='Healthy')
     ax.plot(dist[3], label='Infected')
+
+    # Appropriately label plot
     ax.set_xlabel('Time ($Skoogle-Seconds$)')
     ax.set_ylabel('Percent %')
+    ax.legend(loc='best')
+    ax.set_title('Population Dynamics of Jeremy\'s Disease Emporium over Time')
 
+    # Return figure to caller
     return fig
 
 
