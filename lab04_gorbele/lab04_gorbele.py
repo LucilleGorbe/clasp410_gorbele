@@ -85,7 +85,7 @@ def spread(nstep=4, isize=3, jsize=3, pspread=1.0, pignite=0., pbare0=0.,
         # Set minimum and maximum number of ignition sites, loop until in range
         while (ignite.sum() == 0) | (ignite.sum() > 0.10 * isize * jsize):
             ignite = pignite > rand(isize, jsize)
-        print(f"Starting with {ignite.sum()} points on fire or infected.")
+        print(f"Starting with {ignite.sum()} of {isize * jsize} points on fire or infected.")
         area[0, ignite] = 3
 
     # Run through time
@@ -450,9 +450,10 @@ def compare_pspread_pbare(num=10):
     enflamed = []
 
     # Calculate forest makeup at final timestep as function of pspread
+    pbare0_test = 0.
     for pspread in prange:
         forest = spread(nstep=nstep, isize=isize, jsize=jsize, pignite=pignite,
-                        pspread=pspread, pbare0=0.)
+                        pspread=pspread, pbare0=pbare0_test)
         dist = fprogression(forest)
         # Append final step makeups to vectors for plotting
         bare.append(dist[0][-1])
@@ -463,11 +464,11 @@ def compare_pspread_pbare(num=10):
     ax1.plot(prange, bare, label='Bare', color=fcolors[0])
     ax1.plot(prange, forested, label='Forested', color=fcolors[1])
     ax1.plot(prange, enflamed, label='On Fire', color=fcolors[2])
-    ax2.legend(loc='best')
+    ax1.legend(loc='best')
 
     ax1.set_ylabel('Percentage (%)')
     ax1.set_xlabel(r'$P_{spread}$')
-    ax1.set_title(rf'{nstep}-Step Forest Makeup by $P_spread$')
+    ax1.set_title(rf'{nstep}-Step Forest Makeup by $Pspread$ ($Pbare0={pbare0_test}$)')
 
     # Reset-to-empty for data storage
     bare = []
@@ -475,9 +476,10 @@ def compare_pspread_pbare(num=10):
     enflamed = []
 
     # Calculate forest makeup at final timestep as function of pbare
+    pspread_test = 0.5
     for pbare in prange:
         forest = spread(nstep=nstep, isize=isize, jsize=jsize, pignite=pignite,
-                        pspread=0.5, pbare0=pbare)
+                        pspread=pspread_test, pbare0=pbare)
         dist = fprogression(forest)
         # Append final step makeups to vectors for plotting
         bare.append(dist[0][-1])
@@ -491,7 +493,7 @@ def compare_pspread_pbare(num=10):
 
     ax2.set_ylabel('Percentage (%)')
     ax2.set_xlabel(r'$P_{bare}$')
-    ax2.set_title(rf'{nstep}-Step Forest Makeup by $P_bare$')
+    ax2.set_title(rf'{nstep}-Step Forest Makeup by $Pbare$ ($Pspread={pspread_test}$)')
     ax2.legend(loc='best')
 
     fig.tight_layout()
@@ -524,11 +526,12 @@ def compare_psurvive_immune(num=10):
     healthy = []
     infected = []
 
-    # Calculate population disease stats at final timestep as function of pspread
+    # Calculate population disease stats at final timestep as function of psurvive
+    pbare0_test = 0.
     for psurvive in prange:
         population = spread(nstep=nstep, isize=isize, jsize=jsize,
-                            pignite=ppatient0, pspread=pspread, pbare0=0.,
-                            psurvive=psurvive)
+                            pignite=ppatient0, pspread=pspread,
+                            pbare0=pbare0_test, psurvive=psurvive)
         dist = dprogression(population)
         # Append final step makeups to vectors for plotting
         deceased.append(dist[0][-1])
@@ -544,7 +547,7 @@ def compare_psurvive_immune(num=10):
 
     ax1.set_ylabel('Percentage (%)')
     ax1.set_xlabel(r'$P_{spread}$')
-    ax1.set_title(rf'{nstep}-Step Forest Makeup by $P_immune$')
+    ax1.set_title(rf'{nstep}-Step Forest Makeup by $Pimmune$ ($Pbare={pbare0_test}$)')
     ax1.legend(loc='best')
 
     # Reset-to-empty for data storage
@@ -553,10 +556,12 @@ def compare_psurvive_immune(num=10):
     healthy = []
     infected = []
 
-    # Calculate population disease stats at final timestep as function of pbare
+    # Calculate population disease stats at final timestep as function of pimmune
+    psurvive_test = 0.50
     for pimmune in prange:
-        population = spread(nstep=nstep, isize=isize, jsize=jsize, pignite=ppatient0,
-                            pspread=pspread, pbare0=pimmune, psurvive=0.50)
+        population = spread(nstep=nstep, isize=isize, jsize=jsize,
+                            pignite=ppatient0, pspread=pspread, pbare0=pimmune,
+                            psurvive=psurvive_test)
         dist = dprogression(population)
         # Append final step makeups to vectors for plotting
         deceased.append(dist[0][-1])
@@ -572,7 +577,7 @@ def compare_psurvive_immune(num=10):
 
     ax2.set_ylabel('Percentage (%)')
     ax2.set_xlabel(r'$P_{bare}$')
-    ax2.set_title(rf'{nstep}-Step Forest Makeup by $P_immune$')
+    ax2.set_title(rf'{nstep}-Step Forest Makeup by $Pimmune$ ($Psurvive={psurvive_test}$)')
     ax2.legend(loc='best')
 
     fig.tight_layout()
