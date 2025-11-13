@@ -166,7 +166,7 @@ def verify_lbf(t):
 
 # --------------------------- Rod Problem Verifier ----------------------------
 
-def verify_heatsolve(thresh=1E-2, **kwargs):
+def verify_heatsolve(thresh=1E-6, **kwargs):
     '''
     Plots and prints example solution for 1-D rod diffusion equation against
     solver solution to verify solver function.
@@ -202,9 +202,9 @@ def verify_heatsolve(thresh=1E-2, **kwargs):
                       0.00000, 0.000000, 0.000000],
                      [0.64, 0.48, 0.40, 0.32, 0.26, 0.21, 0.17, 0.1375,
                       0.11125, 0.090000, 0.072812],
-                     [0.96, 0.80, 0.64, 0.52, 0.42, 0.34, 0.28, 0.2225,
+                     [0.96, 0.80, 0.64, 0.52, 0.42, 0.34, 0.275, 0.2225,
                       0.18000, 0.145625, 0.117813],
-                     [0.96, 0.80, 0.64, 0.52, 0.42, 0.34, 0.28, 0.2225,
+                     [0.96, 0.80, 0.64, 0.52, 0.42, 0.34, 0.275, 0.2225,
                       0.18000, 0.145625, 0.117813],
                      [0.64, 0.48, 0.40, 0.32, 0.26, 0.21, 0.17, 0.1375,
                       0.11125, 0.090000, 0.072812],
@@ -374,6 +374,16 @@ def kanger_diffusion(dt=0.1, tstop=150*365):
     # Make figure more readable
     fig.tight_layout()
 
+    # Active layer depth is defined as the layer that can reach above 0 Celsius
+    active_layer = x[summer <= 0][0]
+    # Use active layer depth as permafrost upper boundary
+    # and define lower boundary as lowest point at/below 0 Celsius.
+    pf_lower = x[summer <= 0][-1]
+
+    print("Permafrost conditions:")
+    print(f"Active layer depth at {int(tstop/365)} years: {active_layer} m")
+    print(f"Permafrost depth at {int(tstop/365)} years: {pf_lower} m")
+
     return fig, (ax1, ax2), cbar
 
 
@@ -510,5 +520,27 @@ def kanger_gw_diffusion(tstop=50*365, dt=0.1):
     ax2.legend(loc='lower right')
 
     fig.tight_layout()
+
+    # Active layer depth is defined as the layer that can reach above 0 Celsius
+    active_layer05 = x[summer05 <= 0][0]
+    active_layer10 = x[summer10 <= 0][0]
+    active_layer30 = x[summer30 <= 0][0]
+    # Use active layer depth as permafrost upper boundary
+    # and define lower boundary as lowest point at/below 0 Celsius.
+    pf_lower05 = x[summer05 <= 0][-1]
+    pf_lower10 = x[summer10 <= 0][-1]
+    pf_lower30 = x[summer30 <= 0][-1]
+
+    print("Permafrost conditions for 0.5 degrees C warming:")
+    print(f"Active layer depth at {int(tstop/365)} years: {active_layer05} m")
+    print(f"Permafrost depth at {int(tstop/365)} years: {pf_lower05} m\n")
+
+    print("Permafrost conditions for 0.5 degrees C warming:")
+    print(f"Active layer depth at {int(tstop/365)} years: {active_layer10} m")
+    print(f"Permafrost depth at {int(tstop/365)} years: {pf_lower10} m\n")
+
+    print("Permafrost conditions for 0.5 degrees C warming:")
+    print(f"Active layer depth at {int(tstop/365)} years: {active_layer30} m")
+    print(f"Permafrost depth at {int(tstop/365)} years: {pf_lower30} m")
 
     return fig, ax
