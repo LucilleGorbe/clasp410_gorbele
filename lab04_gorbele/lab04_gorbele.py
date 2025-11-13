@@ -145,7 +145,7 @@ def firerun():
 
     # Create default step sizes and disease conditions
     nstep, isize, jsize = 150, 300, 300
-    pspread, pignite, pbare0 = 0.80, 0.03, 0.03
+    pspread, pignite, pbare0 = 0.40, 0.03, 0.03
 
     # Run the solver with the input dynamics
     forest = spread(nstep=nstep, isize=isize, jsize=jsize, pspread=pspread, 
@@ -162,7 +162,7 @@ def diseaserun():
 
     # Create default step sizes and forest conditions
     nstep, isize, jsize = 150, 300, 300
-    pspread, ppatient0, pimmune0, psurvive = 0.80, 0.03, 0.03, 0.50
+    pspread, ppatient0, pimmune0, psurvive = 0.08, 0.03, 0.03, 0.50
 
     # Run the solver with the input dynamics
     population = spread(nstep=nstep, isize=isize, jsize=jsize, pspread=pspread,
@@ -463,6 +463,7 @@ def compare_pspread_pbare(num=10):
     ax1.plot(prange, bare, label='Bare', color=fcolors[0])
     ax1.plot(prange, forested, label='Forested', color=fcolors[1])
     ax1.plot(prange, enflamed, label='On Fire', color=fcolors[2])
+    ax2.legend(loc='best')
 
     ax1.set_ylabel('Percentage (%)')
     ax1.set_xlabel(r'$P_{spread}$')
@@ -491,6 +492,9 @@ def compare_pspread_pbare(num=10):
     ax2.set_ylabel('Percentage (%)')
     ax2.set_xlabel(r'$P_{bare}$')
     ax2.set_title(rf'{nstep}-Step Forest Makeup by $P_bare$')
+    ax2.legend(loc='best')
+
+    fig.tight_layout()
 
     return fig
 
@@ -541,6 +545,7 @@ def compare_psurvive_immune(num=10):
     ax1.set_ylabel('Percentage (%)')
     ax1.set_xlabel(r'$P_{spread}$')
     ax1.set_title(rf'{nstep}-Step Forest Makeup by $P_immune$')
+    ax1.legend(loc='best')
 
     # Reset-to-empty for data storage
     deceased = []
@@ -568,5 +573,8 @@ def compare_psurvive_immune(num=10):
     ax2.set_ylabel('Percentage (%)')
     ax2.set_xlabel(r'$P_{bare}$')
     ax2.set_title(rf'{nstep}-Step Forest Makeup by $P_immune$')
+    ax2.legend(loc='best')
+
+    fig.tight_layout()
 
     return fig
