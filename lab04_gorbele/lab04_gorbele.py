@@ -137,32 +137,26 @@ def spread(nstep=4, isize=3, jsize=3, pspread=1.0, pignite=0., pbare0=0.,
     return area
 
 
-def firerun():
+def firerun(nstep=150, isize=300, jsize=300, pspread=0.40, pignite=0.0003,
+            pbare0=0.03):
     '''
-    Runs the spread function with disease-scenario calibrations and returns the
-    output population array.
+    Runs the spread function with default forest fire scenario calibrations
+    (editable) and returns the output population array.
     '''
-
-    # Create default step sizes and disease conditions
-    nstep, isize, jsize = 150, 300, 300
-    pspread, pignite, pbare0 = 0.40, 0.0003, 0.03
 
     # Run the solver with the input dynamics
-    forest = spread(nstep=nstep, isize=isize, jsize=jsize, pspread=pspread, 
+    forest = spread(nstep=nstep, isize=isize, jsize=jsize, pspread=pspread,
                     pignite=pignite, pbare0=pbare0)
 
     return forest
 
 
-def diseaserun():
+def diseaserun(nstep=150, isize=300, jsize=300, pspread=.30, ppatient0=0.0003,
+               pimmune0=0.3, psurvive=0.50):
     '''
-    Runs the spread function with forest-scenario calibrations and returns the
-    output forest array.
+    Runs the spread function with default disease-scenario calibrations
+    (editable) and returns the output forest array.
     '''
-
-    # Create default step sizes and forest conditions
-    nstep, isize, jsize = 150, 300, 300
-    pspread, ppatient0, pimmune0, psurvive = 0.3, 0.0003, 0.3, 0.50
 
     # Run the solver with the input dynamics
     population = spread(nstep=nstep, isize=isize, jsize=jsize, pspread=pspread,
