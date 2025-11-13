@@ -34,7 +34,7 @@ plt.style.use("seaborn-v0_8")
 fcolors = ['tan', 'forestgreen', 'crimson']
 forest_cmap = ListedColormap(fcolors)
 
-dcolors = ['darkslategrey', 'turquoise', 'charteuse', 'crimson']
+dcolors = ['darkslategrey', 'turquoise', 'seagreen', 'crimson']
 disease_cmap = ListedColormap(dcolors)
 
 
@@ -145,7 +145,7 @@ def firerun():
 
     # Create default step sizes and disease conditions
     nstep, isize, jsize = 150, 300, 300
-    pspread, pignite, pbare0 = 0.40, 0.03, 0.03
+    pspread, pignite, pbare0 = 0.40, 0.0003, 0.03
 
     # Run the solver with the input dynamics
     forest = spread(nstep=nstep, isize=isize, jsize=jsize, pspread=pspread, 
@@ -162,7 +162,7 @@ def diseaserun():
 
     # Create default step sizes and forest conditions
     nstep, isize, jsize = 150, 300, 300
-    pspread, ppatient0, pimmune0, psurvive = 0.08, 0.03, 0.03, 0.50
+    pspread, ppatient0, pimmune0, psurvive = 0.3, 0.0003, 0.3, 0.50
 
     # Run the solver with the input dynamics
     population = spread(nstep=nstep, isize=isize, jsize=jsize, pspread=pspread,
@@ -200,7 +200,7 @@ def fprogression(forest):
     loc = forest == 3
     fire = loc.sum(axis=(1, 2)) * perconv
 
-    return [bare, fire, forested]
+    return [bare, forested, fire]
 
 
 def plot_fprogression(forest):
@@ -215,9 +215,9 @@ def plot_fprogression(forest):
     dist = fprogression(forest)
 
     # Plot these dynamics
-    ax.plot(dist[0], label='Bare')
-    ax.plot(dist[1], label='On Fire')
-    ax.plot(dist[2], label='Forested')
+    ax.plot(dist[0], label='Bare', color=forest_cmap[0])
+    ax.plot(dist[1], label='Forested', color=forest_cmap[1])
+    ax.plot(dist[2], label='On Fire', color=forest_cmap[2])
 
     # Appropriately label plot
     ax.set_xlabel('Time ($Skoogle-Seconds$)')
@@ -348,10 +348,10 @@ def plot_dprogression(population):
     dist = dprogression(population)
 
     # Plot the population disease dynamics by time.
-    ax.plot(dist[0], label='Deceased')
-    ax.plot(dist[1], label='Immune')
-    ax.plot(dist[2], label='Healthy')
-    ax.plot(dist[3], label='Infected')
+    ax.plot(dist[0], label='Deceased', color=disease_cmap[0])
+    ax.plot(dist[1], label='Immune', color=disease_cmap[1])
+    ax.plot(dist[2], label='Healthy', color=disease_cmap[2])
+    ax.plot(dist[3], label='Infected', color=disease_cmap[3])
 
     # Appropriately label plot
     ax.set_xlabel('Time ($Skoogle-Seconds$)')
@@ -382,7 +382,7 @@ def plot_disease2d(population_in, itime=0):
     '''
 
     # Create figure and axes
-    fig, ax = plt.subplots(1, 1, figsize=(6, 8))
+    fig, ax = plt.subplots(1, 1, figsize=(6, 4))
 
     # Add our pcolor plot, save the resulting mappable object.
     map = ax.pcolor(population_in[itime, :, :], vmin=1, vmax=3, 
@@ -438,8 +438,8 @@ def compare_pspread_pbare(num=10):
         The figure that was plotted on.
     '''
     # Set solver conditions, create fig and axes objects
-    nstep, isize, jsize, pignite = 150, 300, 300, 0.03
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8))
+    nstep, isize, jsize, pignite = 50, 300, 300, 0.03
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 6))
 
     # Create range of comparisons for pspread and pbare
     prange = np.linspace(0, 1, num=num)
@@ -466,6 +466,8 @@ def compare_pspread_pbare(num=10):
     ax1.plot(prange, enflamed, label='On Fire', color=fcolors[2])
     ax1.legend(loc='best')
 
+    # Normalize y limit and appropriately label plot
+    ax1.set_ylim(0, 100)
     ax1.set_ylabel('Percentage (%)')
     ax1.set_xlabel(r'$P_{spread}$')
     ax1.set_title(rf'{nstep}-Step Forest Makeup by $Pspread$ ($Pbare0={pbare0_test}$)')
@@ -491,6 +493,8 @@ def compare_pspread_pbare(num=10):
     ax2.plot(prange, forested, label='Forested', color=fcolors[1])
     ax2.plot(prange, enflamed, label='On Fire', color=fcolors[2])
 
+    # Normalize y limit and appropriately label plot
+    ax2.set_ylim(0, 100)
     ax2.set_ylabel('Percentage (%)')
     ax2.set_xlabel(r'$P_{bare}$')
     ax2.set_title(rf'{nstep}-Step Forest Makeup by $Pbare$ ($Pspread={pspread_test}$)')
@@ -514,8 +518,8 @@ def compare_psurvive_immune(num=10):
         The figure that was plotted on.
     '''
     # Set solver conditions, create fig and axes objects
-    nstep, isize, jsize, ppatient0, pspread = 150, 300, 300, 0.03, 0.50
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8))
+    nstep, isize, jsize, ppatient0, pspread = 50, 300, 300, 0.03, 0.50
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 6))
 
     # Create range of comparisons for pspread and pbare
     prange = np.linspace(0, 1, num=num)
@@ -527,11 +531,11 @@ def compare_psurvive_immune(num=10):
     infected = []
 
     # Calculate population disease stats at final timestep as function of psurvive
-    pbare0_test = 0.
+    pimmune0_test = 0.3
     for psurvive in prange:
         population = spread(nstep=nstep, isize=isize, jsize=jsize,
                             pignite=ppatient0, pspread=pspread,
-                            pbare0=pbare0_test, psurvive=psurvive)
+                            pbare0=pimmune0_test, psurvive=psurvive)
         dist = dprogression(population)
         # Append final step makeups to vectors for plotting
         deceased.append(dist[0][-1])
@@ -539,15 +543,17 @@ def compare_psurvive_immune(num=10):
         healthy.append(dist[2][-1])
         infected.append(dist[3][-1])
 
-    # Plot population disease stats at final timestep as function of pspread
+    # Plot population disease stats at final timestep as function of psurvive
     ax1.plot(prange, deceased, label='Deceased', color=dcolors[0])
     ax1.plot(prange, immune, label='Immune', color=dcolors[1])
     ax1.plot(prange, healthy, label='Healthy', color=dcolors[2])
     ax1.plot(prange, infected, label='Infected', color=dcolors[3])
 
+    # Normalize y limit and appropriately label plot
+    ax1.set_ylim(0, 100)
     ax1.set_ylabel('Percentage (%)')
     ax1.set_xlabel(r'$P_{spread}$')
-    ax1.set_title(rf'{nstep}-Step Forest Makeup by $Pimmune$ ($Pbare={pbare0_test}$)')
+    ax1.set_title(rf'{nstep}-Step Population Makeup by $Psurvive$ ($Pimmune0={pimmune0_test}$)')
     ax1.legend(loc='best')
 
     # Reset-to-empty for data storage
@@ -575,9 +581,11 @@ def compare_psurvive_immune(num=10):
     ax2.plot(prange, healthy, label='Healthy', color=dcolors[2])
     ax2.plot(prange, infected, label='Infected', color=dcolors[3])
 
+    # Normalize y limit and appropriately label plot
+    ax2.set_ylim(0, 100)
     ax2.set_ylabel('Percentage (%)')
     ax2.set_xlabel(r'$P_{bare}$')
-    ax2.set_title(rf'{nstep}-Step Forest Makeup by $Pimmune$ ($Psurvive={psurvive_test}$)')
+    ax2.set_title(rf'{nstep}-Step Population Makeup by $Pimmune$ ($Psurvive={psurvive_test}$)')
     ax2.legend(loc='best')
 
     fig.tight_layout()
