@@ -1,7 +1,7 @@
 #!/usr/bin/env Python3
 
 '''
-This file doesn't prevent forest fires.
+This file makes beautiful forest fires and disease outbreaks.
 
 TO REPRODUCE THE VALUES AND PLOTS IN MY REPORT, DO THIS:
 Ensure that any libraries imported below are installed to the user's
@@ -24,8 +24,8 @@ be able to run any additional functions.
 '''
 
 import numpy as np
-import matplotlib.pyplot as plt
 from numpy.random import rand
+import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 plt.style.use("seaborn-v0_8")
 
@@ -41,8 +41,8 @@ disease_cmap = ListedColormap(dcolors)
 def spread(nstep=4, isize=3, jsize=3, pspread=1.0, pignite=0., pbare0=0.,
            psurvive=1.):
     '''
-    Me when my fire is spreading. Also adaptable for disease modelling spread 
-    with different interpretations of the states.
+    Solves for spread and interactions between 2-D forest/population undergoing
+    a forest fire/major disease event, though may be adaptable for other needs.
 
     Parameters
     ----------
@@ -64,7 +64,10 @@ def spread(nstep=4, isize=3, jsize=3, pspread=1.0, pignite=0., pbare0=0.,
     Returns
     -------
     area : 3-D numpy array
-        dhaudusahdusahuidhsaiudh <FIX LATER>
+        Generated array from solver, represents 2-D forest/population over time
+        during a forest fire/infection
+    early_exit : 3-D numpy array
+        area array with less time steps
     '''
 
     # Create initial forest/healthy population
@@ -92,10 +95,10 @@ def spread(nstep=4, isize=3, jsize=3, pspread=1.0, pignite=0., pbare0=0.,
     for t in range(nstep-1):
         # Check: if there are no active fires/cases, exit loop early
         if (area[t, :, :] == 3).sum() == 0:
-            # set all future time steps to current time step
-            area[t:] = area[t]
+            # Set dimensions of array to only encompass generated timeline
+            early_exit = area[:t+1]
             print(f"No more tiles on fire; simulation terminated early at t={t}")
-            break
+            return early_exit
 
         # Initialize next time step as current time step
         area[t+1, :, :] = area[t, :, :]
@@ -419,7 +422,7 @@ def disease_make_all_2dplots(population_in, folder='disease/results/'):
         plt.close('all')
 
 
-def compare_pspread_pbare(num=10):
+def compare_pspread_pbare(num=30):
     '''
     Parameters
     ----------
@@ -499,7 +502,7 @@ def compare_pspread_pbare(num=10):
     return fig
 
 
-def compare_psurvive_pimmune(num=10):
+def compare_psurvive_pimmune(num=30):
     '''
     Parameters
     ----------
