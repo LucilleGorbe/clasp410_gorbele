@@ -445,8 +445,8 @@ def plot_disease2d(population_in, itime=0):
 
     # Flip y-axis (corresponding to matrix's x direction and label stuff)
     ax.invert_yaxis()
-    ax.set_xlabel('Y Coordinate ($lightyears$) $\\longrightarrow$')
-    ax.set_ylabel('X Coordinate ($lightyears$) $\\longrightarrow$')
+    ax.set_xlabel('Y Coordinate ($individuals$)) $\\longrightarrow$')
+    ax.set_ylabel('X Coordinate ($individuals$)) $\\longrightarrow$')
     ax.set_title(f"Jeremy's Disease Emporium at T={itime:03d}")
 
     # Return figure object to caller
