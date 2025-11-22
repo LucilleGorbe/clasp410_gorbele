@@ -91,7 +91,7 @@ def spread(nstep=4, isize=3, jsize=3, pspread=1.0, pignite=0., pbare0=0.,
     else:  # Scatter fire randomly:
         ignite = np.zeros((isize, jsize), dtype=bool)
         # Set minimum and maximum number of ignition sites, loop until in range
-        while (ignite.sum() == 0) | (ignite.sum() > 0.10 * isize * jsize):
+        while (ignite.sum() == 0) | (ignite.sum() > (pignite + 0.1) * isize * jsize):
             ignite = pignite > rand(isize, jsize)
         print(f"Starting with {ignite.sum()} of {isize * jsize} points on fire or infected.")
         area[0, ignite] = 3
