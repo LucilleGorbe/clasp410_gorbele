@@ -88,15 +88,16 @@ def temp_warm(lats_in):
         Temperature in Celcius.
     '''
 
-    # Get base grid:
-    dlat, lats = gen_grid()
-
-    # Set initial temperature curve:
+    # Set initial temp curve:
     T_warm = np.array([-47, -19, -11, 1, 9, 14, 19, 23, 25, 25,
                        23, 19, 14, 9, 1, -11, -19, -47])
+    # Get base grid:
+    npoints = T_warm.size
+    dlat, lats = gen_grid(npoints)
+
     coeffs = np.polyfit(lats, T_warm, 2)
 
-    # Now, return fitting:
+    # Return fit:
     temp = coeffs[2] + coeffs[1]*lats_in + coeffs[0] * lats_in**2
 
     return temp
@@ -157,9 +158,10 @@ def insolation(S0, lats):
 
 def snowball_earth(nlat=18, tfinal=10000., dt=1., lam=100., emis=1.0,
                    init_cond=temp_warm, apply_spherecorr=False,
-                   apply_insol=False, solar=S0, albuce=0.6, albgnd=.3):
+                   apply_insol=False, solar=S0, albice=0.6, albgnd=.3):
     '''
-    
+    This function does things and makes it cold. Brr!
+
     Parameters
     ----------
     nlat : int, defaults to 18
@@ -181,7 +183,7 @@ def snowball_earth(nlat=18, tfinal=10000., dt=1., lam=100., emis=1.0,
     apply_insol : bool, defaults to False
         Apply insolation term.
     solar : float, defaults to 1370
-        Set level of solar forcing in W/m2
+        Set level of TOA insolation in W/m2
     albice, albgnd : floats, default to 0.6 and 0.3
         Set albedo values for ice and ground
 
@@ -208,13 +210,14 @@ def snowball_earth(nlat=18, tfinal=10000., dt=1., lam=100., emis=1.0,
     # Get derivative of Area:
     dAxz = np.matmul(B, Axz)
 
+    # Set number of time steps:
     nsteps = int(tfinal / dt)
 
     # Set timestep to seconds:
     dt = dt * 365 * 24 * 3600
 
-    albedo = np.zeros(nlat)
-
+    # Create insolation:
+    insol = insolation(solar, lats)
 
     # Create temp array, set initial condition
     Temp = np.zeros(nlat)
@@ -223,8 +226,13 @@ def snowball_earth(nlat=18, tfinal=10000., dt=1., lam=100., emis=1.0,
     else:
         Temp += init_cond
 
+    # Set initial albedo.
+    albedo = np.zeros(nlat)
+    loc_ice = Temp <= -10  # Sea water freezes at ten below.
+    albedo[loc_ice] = albice
+    albedo[~loc_ice] = albgnd
 
-    # Create our X matrix
+    # Create our K matrix:
     K = np.zeros((nlat, nlat))
     K[np.arange(nlat), np.arange(nlat)] = -2
     K[np.arange(nlat-1)+1, np.arange(nlat-1)] = 1
@@ -246,7 +254,7 @@ def snowball_earth(nlat=18, tfinal=10000., dt=1., lam=100., emis=1.0,
             sphercorr = 0
 
         if apply_insol:
-            radiative = (1-albedo)*solar - emis*sigma*(Temp+273)**4
+            radiative = (1-albedo)*insol - emis*sigma*(Temp+273)**4
             Temp += dt * radiative / (rho*C*mxdlyr)
 
         # Advance solution.
@@ -260,9 +268,9 @@ def test_functions():
     Suite of tests
     '''
 
-    print("test gen_grid()")
+    print("test gen_grid():")
     print("For npoints=5: ")
-    dlat_correct, lats_correct = 36.0, np.array[18., 54., 90., 126., 162]
+    dlat_correct, lats_correct = 36.0, np.array([18., 54., 90., 126., 162])
     results = gen_grid(5)
     if results[0] == dlat_correct:
         print("\tPassed!")
@@ -270,20 +278,45 @@ def test_functions():
         print('\tFAILED!')
         print(f"Expected: {dlat_correct}, {lats_correct}")
         print(f"Got: {results}")
-    
+
+
+
+    # TO DO: make a test case for each function up there to make sure it works 
+    print("\ntest temp_warm():")
+    print("njsnjdnjas")
+
 
 def problem1():
     '''
+    Answers problem 1! does some plotting la la la :D
+
+    "Code up the solver shown in Equation 4. Do this in parts: begin with only
+    the basic diffusion solver (Equation 2). Use the values given in Table 1
+    and try to reproduce the red line in Figure 1. For this part, use an
+    albedo of 0.3 at all points on your grid. Then, add in the spherical
+    correction term (Equation 3) and work until you can reproduce the gold line
+    in Figure 1. Finally, include the radiative forcing term (Equation 4);
+    work to reproduce the green line in Figure 1. Include your validation
+    steps in your lab report."
+
+    Returns
+    -------
+    fig : matplotlib figure object
+        The figure to be plotted on.
     '''
+
+    # Create a baseline warm earth without diffusion
     dlat, lats = gen_grid()
     temp_init = temp_warm(lats)
 
+    # Create diffusion only and plus-spherical-correction modes
     lats, temp_diff = snowball_earth()
     lats, temp_diffspcor = snowball_earth(apply_spherecorr=True)
-    # Call with constant albedo across surface
-    lats, temp_alls = snowball_earth(apply_spherecorr=True, apply_insol=True, 
+    # Call plus-solar-forcing with constant albedo across surface
+    lats, temp_alls = snowball_earth(apply_spherecorr=True, apply_insol=True,
                                      albice=0.3)
 
+    # Create plot and plot all lines for different modes of earth solver
     fig, ax = plt.subplots(1, 1)
     ax.plot(lats-90, temp_init, label='Initial Condition')
     ax.plot(lats-90, temp_diff, label='Diffusion Only')
@@ -291,8 +324,107 @@ def problem1():
             label='Diffusion And Spherical Correction')
     ax.plot(lats-90, temp_alls,
             label='Diffusion, Spherical Correction, and Radiative')
+    
+    # Label the plot appropriately
     ax.set_title('Solution after 10000 Years')
     ax.set_ylabel(r'Temp ($^{\circ}C$)')
     ax.set_xlabel(r'Latitude ($^{\circ}$)')
     ax.legend(loc='best')
 
+    # Return figure to caller
+    return fig
+
+
+def problem2():
+    '''
+    bWah Bwah bwah bwah vary vary vary
+
+    Tune your model so that it can reproduce the warm-Earth equilibrium. There
+    are two parameters in our model that contain much uncertainty: diffusivity
+    (λ) and emissivity (ϵ). Explore each independently (allow λ to range from
+    0 to 150 and ϵ to range from 0 to 1) to determine their impact on the
+    equilibrium solution. Then, pick a value for each that, when used in
+    combination, allows you to best reproduce the ”warm Earth” curve given by
+    temp_warm(). Report your findings and use these values for rest of the lab.
+
+    Returns
+    -------
+    fig : matplotlib figure object
+        The figure to be plotted on.
+    '''
+
+    lconst = 25
+    econst = 0.5
+
+    nlats = 18
+
+    # Create warm earth baseline
+    dlats, lats = gen_grid(nbins=nlats)
+    warm_baseline = temp_warm(lats)
+
+    # vary lambda
+    lam = np.linspace(0, 150, 75)
+    emis = np.linspace(0, 1, 25)
+
+    # So we run the snowball earth model with everything ON and then take their
+    # average absolute difference from temp_warm (RSE) and then plot it against
+    # lambda and emissivity
+
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 8))
+
+    # Create empty arrays to store residuals
+    lamResids = np.zeros(lam.size)
+    emisResids = np.zeros(emis.size)
+
+    # Vary lambda, keep emis & albedo constant
+    for pos, l in enumerate(lam):
+        # Grab temperatures
+        lats, temp_vlam = snowball_earth(nlat=nlats, lam=l, emis=econst,
+                                         apply_spherecorr=True,
+                                         apply_insol=True, albice=0.3)
+        lamResids[pos] = np.sum(np.abs(temp_vlam - warm_baseline))
+
+    # Vary emissivity, keep lambda & albedo constant
+    for pos, e in enumerate(emis):
+        lats, temp_vemis = snowball_earth(nlat=nlats, lam=lconst, emis=e,
+                                          apply_spherecorr=True,
+                                          apply_insol=True, albice=0.3)
+        emisResids[pos] = np.sum(np.abs(temp_vemis - warm_baseline))
+
+    emisAvgResids = emisResids / nlats
+    lamAvgResids = lamResids / nlats
+
+    ax1.plot(lam, lamAvgResids)
+    ax1.set_xlabel(r'${\lambda}$ ($\frac{m^2}{s})')
+    ax1.set_ylabel('Residuals from temp_warm()')
+    ax1.set_title('')
+
+    ax2.plot(emis, emisAvgResids)
+    ax2.set_xlabel('Emissivity')
+    ax2.set_ylabel('Residuals from temp_warm()')
+    ax2.set_title('')
+
+    # Find optimal lambda and emissivity and avg residual for those
+    lamopt = lam[np.argmin(lamAvgResids)]
+    emisopt = emis[np.argmin(emisAvgResids)]
+    lats, temp_opt = snowball_earth(nlat=nlats, lam=lamopt, emis=emisopt,
+                                    apply_spherecorr=True,
+                                    apply_insol=True, albice=0.3)
+    
+    optAvgResid = np.sum(np.abs(temp_opt - warm_baseline)) / nlats
+
+    # TO DO: add check to see if this is better than optimal w/ baseline lambda
+    # And baseline emissivity
+    # If not, use the baseline lambda and optimal emis
+    # or the baseline emis and opt. lambda (whichever is better) 
+
+    print(f"Optimal lambda: {lamopt} m^2/s\nOptimal emissivity: {emisopt}")
+    print(f"Average Residual for optimal choices: {optAvgResid} Degrees C")
+
+    return fig
+
+        
+
+
+
+    
