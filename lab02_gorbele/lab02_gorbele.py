@@ -10,14 +10,14 @@ and is running python, enter `$ run lab02_gorbele.py`. The $ sign is not typed
 by the user, but indicates where shell input begins.
 
 Plots and results can be obtained by running the commands:
-`$ verify_euler_rk8()`, which addresses science question #1. 
+`$ verify_euler_rk8()`, which addresses science question #1.
 `$ vary_comp()`, which addresses science question #2, and
 `$ vary_pp()`, which adresses science question #3.
 Plots are saved with descriptive names and are labelled.
 To show the plots from the terminal, after running one of these commands,
 the user can run `$ plt.show()` to display the current plot.
 
-Note that, until the plot is closed or unless interactive mode is turned on, 
+Note that, until the plot is closed or unless interactive mode is turned on,
 the terminal will be occupied running the plot and will not
 be able to run any additional functions.
 '''
