@@ -33,12 +33,12 @@ radEarth = 6357000.  # Earth Radius (m)
 mxdlyr = 50.         # Depth of mixed layer (m)
 sigma = 5.67e-8      # Steffan Boltzmann Constant
 C = 4.2e6            # Heat capacity of water (J/m^-3/K)
-rho = 1020           # Density of sea water (kg/m^3)
-emis = 1             # Emissivity
-S0 = 1370            # Solar Flux (W/m^2)
+rho = 1020.          # Density of sea water (kg/m^3)
+emissivity = 1.      # Emissivity
+S0 = 1370.           # Solar Flux (W/m^2)
 Afrozen = 0.6        # Albedo for Snow/Ice
 Awater = 0.3         # Albedo for Water/Ground
-lam = 100            # Thermal diffusivity (m^2/s)
+lam = 100.           # Thermal diffusivity (m^2/s)
 
 
 # be able to set albedo dynamically (Axz), should be same size as grid
@@ -156,7 +156,7 @@ def insolation(S0, lats):
     return insolation
 
 
-def snowball_earth(nlat=18, tfinal=10000., dt=1., lam=100., emis=1.0,
+def snowball_earth(nlat=18, tfinal=10000., dt=1., lam=100., emis=emissivity,
                    init_cond=temp_warm, apply_spherecorr=False,
                    apply_insol=False, solar=S0, albice=0.6, albgnd=.3):
     '''
@@ -165,7 +165,7 @@ def snowball_earth(nlat=18, tfinal=10000., dt=1., lam=100., emis=1.0,
     Parameters
     ----------
     nlat : int, defaults to 18
-        Number of latitude cells. Pick something that is 
+        Number of latitude cells.
     tfinal : float, defaults to 10000
         Time length of simulation, in years.
     dt : float, defaults to 1.
@@ -324,7 +324,7 @@ def problem1():
             label='Diffusion And Spherical Correction')
     ax.plot(lats-90, temp_alls,
             label='Diffusion, Spherical Correction, and Radiative')
-    
+
     # Label the plot appropriately
     ax.set_title('Solution after 10000 Years')
     ax.set_ylabel(r'Temp ($^{\circ}C$)')
@@ -391,40 +391,184 @@ def problem2():
                                           apply_insol=True, albice=0.3)
         emisResids[pos] = np.sum(np.abs(temp_vemis - warm_baseline))
 
+    # Averge residuals per latitude cell
     emisAvgResids = emisResids / nlats
     lamAvgResids = lamResids / nlats
 
+    # Plot these residuals and label plot appropriately
     ax1.plot(lam, lamAvgResids)
     ax1.set_xlabel(r'${\lambda}$ ($\frac{m^2}{s})')
-    ax1.set_ylabel('Residuals from temp_warm()')
-    ax1.set_title('')
+    ax1.set_ylabel(r'Average Temp. Residual ($^{\circ}C$)')
+    ax1.set_title(f'Average Temperature Residual by lambda for emissivity={econst}')
 
     ax2.plot(emis, emisAvgResids)
     ax2.set_xlabel('Emissivity')
-    ax2.set_ylabel('Residuals from temp_warm()')
-    ax2.set_title('')
+    ax1.set_title(f'Average Temperature Residual by emissivity for lambda={lconst}')
 
-    # Find optimal lambda and emissivity and avg residual for those
+    fig.suptitle('Average Temperature Residuals from Given Warm Earth by lambda and emissivity')
+
+    # Find optimal lambda and emissivity under established conditions
     lamopt = lam[np.argmin(lamAvgResids)]
     emisopt = emis[np.argmin(emisAvgResids)]
+
+    # Store avg residuals for both situations, try combining optimals, too
+    lats, temp_lamopt = snowball_earth(nlat=nlats, lam=lamopt, emis=econst,
+                                       apply_spherecorr=True,
+                                       apply_insol=True, albice=0.3)
+    lats, temp_emisopt = snowball_earth(nlat=nlats, lam=lconst, emis=emisopt,
+                                        apply_spherecorr=True,
+                                        apply_insol=True, albice=0.3)
     lats, temp_opt = snowball_earth(nlat=nlats, lam=lamopt, emis=emisopt,
                                     apply_spherecorr=True,
                                     apply_insol=True, albice=0.3)
-    
-    optAvgResid = np.sum(np.abs(temp_opt - warm_baseline)) / nlats
 
-    # TO DO: add check to see if this is better than optimal w/ baseline lambda
-    # And baseline emissivity
-    # If not, use the baseline lambda and optimal emis
-    # or the baseline emis and opt. lambda (whichever is better) 
+    combOptAvgResid = np.sum(np.abs(temp_opt - warm_baseline)) / nlats
+    lamOptAvgResid = np.sum(np.abs(temp_lamopt - warm_baseline)) / nlats
+    emisOptAvgResid = np.sum(np.abs(temp_emisopt - warm_baseline)) / nlats
 
-    print(f"Optimal lambda: {lamopt} m^2/s\nOptimal emissivity: {emisopt}")
-    print(f"Average Residual for optimal choices: {optAvgResid} Degrees C")
+    # Print out optimal choices for each set and average residuals for scenario
+    # Lowest residual is best for the use case here :D
+    print(f"Optimal lambda for emis of {econst}: {lamopt:.3f} m^2/s")
+    print(f"Scenario Average Residual: {lamOptAvgResid:.3f} Deg C")
+    print(f"Optimal emissivity for lambda of {lconst} m^2/s: {emisopt:.3f}")
+    print(f"Scenario Average Residual: {emisOptAvgResid:.3f} Deg C")
+    print(f"Average Residual for combined optimal choices: {combOptAvgResid:.3f} Deg C")
+    print(f"Best choice of lambda and emis resulted in lowest Average Residual")
 
+    # Return figure to caller
     return fig
 
-        
+
+def problem3(emis=0.708, lam=25.):
+    '''
+    Docstring for problem3
+
+    Use your function to explore how initial conditions affect the equilibrium
+    solution. Switch from constant albedo to dynamic albedo. Begin with a ”hot”
+    Earth (60◦ at all locations)- what is your equilibrium solution? Repeat
+    with a ”cold” Earth (-60◦ at all locations) - what is your equilibrium
+    solution? Finally, ”flash freeze” the Earth by starting with the warm
+    Earth solution curve you used in Part 1 and 2, but now set albedo to 0.6.
+    How do these results compare to each other? What does it tell us about the
+    stability of snowball vs. warm Earth solutions?
+
+    Parameters
+    ----------
+    emis, lam : floats, default to 0.708 and 25., respectively
+        Inputs for emissivity and lambda (lambda in m^2/s)
+
+    Returns
+    -------
+    fig : matplotlib figure object
+        The figure to be plotted on.
+    '''
+
+    # Set number of latitude cells
+    nlat = 18
+
+    # Run simulation with hot and cold conditions and dynamic albedo
+    lats, temp_hot = snowball_earth(nlat=nlat, lam=lam, emis=emis,
+                                    init_cond=60., apply_spherecorr=True,
+                                    apply_insol=True, albice=0.6)
+    lats, temp_cold = snowball_earth(nlat=nlat, lam=lam, emis=emis,
+                                     init_cond=60., apply_spherecorr=True,
+                                     apply_insol=True, albice=0.6)
+    lats, temp_flash = snowball_earth(nlat=nlat, lam=lam, emis=emis,
+                                      init_cond=temp_warm,
+                                      apply_spherecorr=True,
+                                      apply_insol=True, albice=0.6)
+
+    fig, ax = plt.subplots(1, 1, figsize=(4, 6))
+
+    ax.plot(temp_hot, lats-90, label=r"60 $^{\circ}C$ initial temperature", 
+            color='red', lw=3)
+    ax.plot(temp_cold, lats-90, label=r"-60 $^{\circ}C$ initial temperature", 
+            color='blue', ls='-.', lw=3)
+    ax.plot(temp_hot, lats-90, label=r"Latitude-varying initial temperatures", 
+            color='green', ls='--', lw=3)
+
+    # Label plot appropriately
+    ax.legend(loc='best')
+    ax.set_ylabel("Latitude")
+    ax.set_xlabel(r"Temperature $^{\circ}C$")
+    ax.set_title("Equilibrium Temperature of Earth by Latitude")
+    fig.tight_layout()
+
+    # Return figure to caller
+    return fig
 
 
+def problem4(emis=0.708, lam=25.):
+    '''
+    Docstring for problem4
 
+    Explore the impact of solar forcing on your snowball Earth. Create a
+    ”solar multiplier” factor, γ, which is applied to your insolation term in
+    your solver, i.e., insol = gamma * insolation(S0, lats)
+    Starting with the ”cold Earth” initial condition, run your simulation with
+    γ = 0.4. Use the result as an initial conditition for another simulation,
+    increasing γ by 0.05. Repeat this until γ = 1.4. At this point,
+    ”turn around”: lower γ by 0.05, run another simulation, repeat until
+    γ = 0.4 again. Each time, use the previous result as the initial condition
+    to the next simulation. Plot average global temperature versus γ. Answer
+    the science question, does the snowball Earth hypothesis represent an
+    equilibrium solution that is stable? What does this plot tell you about the
+    stability of the different equilibria? Given the large range for γ and
+    considering the historical variation of S0, do you think that
+    snowball Earth is a valid hypothesis?
+
+    Parameters
+    ----------
+    emis, lam : floats, default to 0.708 and 25., respectively
+        Inputs for emissivity and lambda (lambda in m^2/s)
+
+    Returns
+    -------
+    fig : matplotlib figure object
+        The figure to be plotted on.
+    '''
+
+    # Set number of latitude cells
+    nlat = 18
+
+    # Create vector of gammas to move through.
+    steps = round((1.4 - 0.4) / 0.05) + 1
+    gamma = np.append(np.linspace(0.4, 1.4, num=steps),
+                      np.linspace(1.4, 0.4, num=steps)[1:])
     
+    # Create vector of initial temperatures, start as cold.
+    init_temps = np.zeros(nlat) - 60
+    temps_gamma = np.zeros((nlat, gamma.size))
+
+    # Run through each gamma step, use previous run for initial temperatures.
+    for i, gam in enumerate(gamma):
+        lats, init_temps = snowball_earth(nlat=nlat, lam=lam, emis=emis,
+                                          init_cond=init_temps,
+                                          apply_spherecorr=True,
+                                          apply_insol=True, solar=(S0 * gam),
+                                          albice=0.6)
+        temps_gamma[:, i] = init_temps
+
+    # Create figure and axis
+    fig, ax = plt.subplots(1, 1, figsize=(8, 6))
+
+    # Create color map of temps by lat, gamma, and initial condition
+    tempmap = ax.pcolor(temps_gamma, cmap='seismic', vmin=-80,
+                        vmax=80)
+    
+    # Label axes ticks as gamma and latitude, respectively
+    ax.set_xticks(np.array([0, 10, 20, 30, 40]),
+                  labels=[0.4, 0.9, 1.4, 0.9, 0.4])
+    ylabels = np.linspace(-90, 90, num=round(nlat/2)+1, dtype=int)
+    ax.set_yticklabels(ylabels)
+    ax.set_xlabel("Insolation Multiplier γ")
+    ax.set_ylabel(r"Latitude ($^{\circ}$)")
+
+    # Create colorbar and label properly, set colormap to be mirrored about 0
+    cbartemps = plt.colorbar(tempmap, ax=ax,  location='right',
+                             orientation='vertical')
+    cbartemps.set_label(r"Temperature ($^{\circ}C$)", rotation=270)
+
+    # Return figure to caller
+    return fig
+
