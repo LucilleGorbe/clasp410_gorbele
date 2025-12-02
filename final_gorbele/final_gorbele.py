@@ -7,10 +7,13 @@ import matplotlib.pyplot as plt
 plt.style.use("seaborn-v0_8")
 
 
-def solve_heat(func_0, func_ub, func_lb, xstop=100., tstop=150*365., dx=1,
-               dt=0.1, c2=(0.25*10**-6)*86400, n=False, **kwargs):
+def solve_heat(func_0, func_lb, xstop=100., tstop=150*365., dx=1,
+               dt=0.1, c2=(0.25*10**-6)*86400, v=0.02, ifconc=0.3, **kwargs):
     '''
     Solves the 1-dimensional diffusion equation.
+    New dangerous forever chemical called Buckeyeallium
+    Crimson (sometimes red color), smells bad, horribly processed
+    Used in making OSU brand sports drinks
 
     Parameters
     ----------
@@ -29,6 +32,8 @@ def solve_heat(func_0, func_ub, func_lb, xstop=100., tstop=150*365., dx=1,
         Length of object and time under consideration
     c2 : float, default = 0.25 mm^2*s^-1 (0.0216 m^2*days^-1)
         c^2 value for heat diffusivity
+    v : float, default = 0.02 m/s
+        velocity :D
     n : bool, default = False
         True if Neumann boundary conditions, false if Dirichlet
     **kwargs : keyword arguments
@@ -43,7 +48,9 @@ def solve_heat(func_0, func_ub, func_lb, xstop=100., tstop=150*365., dx=1,
 
     # Check our stability criterion, exit if unstable
     # Will potentially need to change due to intro of 1st order error
-    dtmax = dx**2 / (2*c2)
+    dtmaxdiff = dx**2 / (2*c2)
+    dtmaxadv = dx / (2*v)
+    dtmax = dtmaxdiff * (dtmaxdiff >= dtmaxadv) + dtmaxadv * (dtmaxdiff < dtmaxadv)
     if dt > dtmax:
         raise ValueError(f"Stablility criterion not met, dt={dt} > dt_max={dtmax}.")
 
@@ -60,20 +67,25 @@ def solve_heat(func_0, func_ub, func_lb, xstop=100., tstop=150*365., dx=1,
     U[:, 0] = func_0(x, **kwargs)
     # print(U[:, 0])
 
+    # THIS CHANGES. NEED TO HAVE A DT TO THIS PER TIME STEP.
     # Set upper boundary conditions across time
-    U[0, :] = func_ub(t, **kwargs)
-    U[-1, :] = func_lb(t, **kwargs)
+    #U[0, :] = func_ub(t, **kwargs)
+    U[-1, :] = ifconc  # LOWER BOUNDARY
 
-    # Get r coeff:
+
+    # Get r and p coeffs:
     r = c2 * (dt/dx**2)
+    p = v * (dt/dx)
 
     # Solve heat equation
     for j in range(N-1):
-        U[1:M-1, j+1] = (1-2*r) * U[1:M-1, j] + r*(U[2:M, j] + U[:M-2, j])
-        # Use Neumann conditions as applicable
-        if n:
-            U[0, j+1] = U[1, j+1]
-            U[M-1, j+1] = U[M-2, j+1]
+        #U[M-1, j+1] = 0  # Maybe??? We lose stuff here but we can never gain it
+        U[1:M-1, j+1] = (1-2*r-p) * U[1:M-1, j] + r*U[2:M, j] + (r+p)*U[:M-2, j]
+        # Use Neumann conditions as applicable (NOT APPLICABLE)
+        # APPLICABLE FOR TOP FOR OUTFLOW.
+        #if n:
+            #U[0, j+1] = U[1, j+1]
+        U[M-1, j+1] = U[M-2, j+1]
 
     # Return time and position vectors, and temperature array
     return t, x, U
