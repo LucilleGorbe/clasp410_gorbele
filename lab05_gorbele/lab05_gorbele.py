@@ -46,7 +46,7 @@ lam = 100.           # Thermal diffusivity (m^2/s)
 
 
 # Bring in new functions
-def gen_grid(nbins=18):
+def gen_grid(nlat=18):
     '''
     Generate a grid from 0 to 180 lat (where 0 is south pole, 180 is north)
     where each returned point represents the cell center.
@@ -64,8 +64,8 @@ def gen_grid(nbins=18):
         Array of cell center latitudes.
     '''
 
-    dlat = 180 / nbins  # Latitude spacing.
-    lats = np.arange(0, 180, dlat) + dlat/2. # Lat cell centers
+    dlat = 180 / nlat  # Latitude spacing.
+    lats = np.arange(0, 180, dlat) + dlat/2.  # Lat cell centers
 
     # Alternative way to obtain grid:
     # lats = np.linspace(dlat/2., 180-dlat/2, nbins)
@@ -265,7 +265,7 @@ def snowball_earth(nlat=18, tfinal=10000., dt=1., lam=100., emis=emissivity,
 
 def test_functions():
     '''
-    Suite of tests
+    This function runs tests to ensure that 
     '''
 
     print("test gen_grid():")
@@ -278,17 +278,16 @@ def test_functions():
         print('\tFAILED!')
         print(f"Expected: {dlat_correct}, {lats_correct}")
         print(f"Got: {results}")
+    
 
 
 
     # TO DO: make a test case for each function up there to make sure it works 
-    print("\ntest temp_warm():")
-    print("njsnjdnjas")
-
+    
 
 def problem1():
     '''
-    Answers problem 1! does some plotting la la la :D
+    Plots three methods of the snowball_earth function and their 
 
     "Code up the solver shown in Equation 4. Do this in parts: begin with only
     the basic diffusion solver (Equation 2). Use the values given in Table 1
@@ -337,15 +336,11 @@ def problem1():
 
 def problem2():
     '''
-    bWah Bwah bwah bwah vary vary vary
-
-    Tune your model so that it can reproduce the warm-Earth equilibrium. There
-    are two parameters in our model that contain much uncertainty: diffusivity
-    (λ) and emissivity (ϵ). Explore each independently (allow λ to range from
-    0 to 150 and ϵ to range from 0 to 1) to determine their impact on the
-    equilibrium solution. Then, pick a value for each that, when used in
-    combination, allows you to best reproduce the ”warm Earth” curve given by
-    temp_warm(). Report your findings and use these values for rest of the lab.
+    Finds and prints optimal diffusion coefficient (lambda) and emissivity for
+    Earth temperature distribution via given lambda and emis. terms via average
+    residual per latitudinal cell from expected warm-earth equilibrium. Uses
+    static albedo. Additionally plots charts of residuals by varying emissivity
+    and by varying lambda.
 
     Returns
     -------
@@ -353,13 +348,13 @@ def problem2():
         The figure to be plotted on.
     '''
 
-    lconst = 25
-    econst = 0.5
+    lhold = 25
+    ehold = 0.5
 
     nlats = 18
 
     # Create warm earth baseline
-    dlats, lats = gen_grid(nbins=nlats)
+    dlats, lats = gen_grid(nlat=nlats)
     warm_baseline = temp_warm(lats)
 
     # vary lambda
@@ -379,14 +374,14 @@ def problem2():
     # Vary lambda, keep emis & albedo constant
     for pos, l in enumerate(lam):
         # Grab temperatures
-        lats, temp_vlam = snowball_earth(nlat=nlats, lam=l, emis=econst,
+        lats, temp_vlam = snowball_earth(nlat=nlats, lam=l, emis=ehold,
                                          apply_spherecorr=True,
                                          apply_insol=True, albice=0.3)
         lamResids[pos] = np.sum(np.abs(temp_vlam - warm_baseline))
 
     # Vary emissivity, keep lambda & albedo constant
     for pos, e in enumerate(emis):
-        lats, temp_vemis = snowball_earth(nlat=nlats, lam=lconst, emis=e,
+        lats, temp_vemis = snowball_earth(nlat=nlats, lam=lhold, emis=e,
                                           apply_spherecorr=True,
                                           apply_insol=True, albice=0.3)
         emisResids[pos] = np.sum(np.abs(temp_vemis - warm_baseline))
@@ -399,11 +394,11 @@ def problem2():
     ax1.plot(lam, lamAvgResids)
     ax1.set_xlabel(r'${\lambda}$ ($\frac{m^2}{s})')
     ax1.set_ylabel(r'Average Temp. Residual ($^{\circ}C$)')
-    ax1.set_title(f'Average Temperature Residual by lambda for emissivity={econst}')
+    ax1.set_title(f'Average Temperature Residual by lambda for emissivity={ehold}')
 
     ax2.plot(emis, emisAvgResids)
     ax2.set_xlabel('Emissivity')
-    ax1.set_title(f'Average Temperature Residual by emissivity for lambda={lconst}')
+    ax1.set_title(f'Average Temperature Residual by emissivity for lambda={lhold}')
 
     fig.suptitle('Average Temperature Residuals from Given Warm Earth by lambda and emissivity')
 
@@ -412,10 +407,10 @@ def problem2():
     emisopt = emis[np.argmin(emisAvgResids)]
 
     # Store avg residuals for both situations, try combining optimals, too
-    lats, temp_lamopt = snowball_earth(nlat=nlats, lam=lamopt, emis=econst,
+    lats, temp_lamopt = snowball_earth(nlat=nlats, lam=lamopt, emis=ehold,
                                        apply_spherecorr=True,
                                        apply_insol=True, albice=0.3)
-    lats, temp_emisopt = snowball_earth(nlat=nlats, lam=lconst, emis=emisopt,
+    lats, temp_emisopt = snowball_earth(nlat=nlats, lam=lhold, emis=emisopt,
                                         apply_spherecorr=True,
                                         apply_insol=True, albice=0.3)
     lats, temp_opt = snowball_earth(nlat=nlats, lam=lamopt, emis=emisopt,
@@ -428,9 +423,9 @@ def problem2():
 
     # Print out optimal choices for each set and average residuals for scenario
     # Lowest residual is best for the use case here :D
-    print(f"Optimal lambda for emis of {econst}: {lamopt:.3f} m^2/s")
+    print(f"Optimal lambda for emis of {ehold}: {lamopt:.3f} m^2/s")
     print(f"Scenario Average Residual: {lamOptAvgResid:.3f} Deg C")
-    print(f"Optimal emissivity for lambda of {lconst} m^2/s: {emisopt:.3f}")
+    print(f"Optimal emissivity for lambda of {lhold} m^2/s: {emisopt:.3f}")
     print(f"Scenario Average Residual: {emisOptAvgResid:.3f} Deg C")
     print(f"Average Residual for combined optimal choices: {combOptAvgResid:.3f} Deg C")
     print(f"Best choice of lambda and emis resulted in lowest Average Residual")
@@ -441,7 +436,8 @@ def problem2():
 
 def problem3(emis=0.708, lam=25.):
     '''
-    Docstring for problem3
+    Plots impact of initial conditions on 10000-year equilibrium conditions:
+    cold, hot, and warm earth.
 
     Use your function to explore how initial conditions affect the equilibrium
     solution. Switch from constant albedo to dynamic albedo. Begin with a ”hot”
@@ -500,22 +496,11 @@ def problem3(emis=0.708, lam=25.):
 
 def problem4(emis=0.708, lam=25.):
     '''
-    Docstring for problem4
-
-    Explore the impact of solar forcing on your snowball Earth. Create a
-    ”solar multiplier” factor, γ, which is applied to your insolation term in
-    your solver, i.e., insol = gamma * insolation(S0, lats)
-    Starting with the ”cold Earth” initial condition, run your simulation with
-    γ = 0.4. Use the result as an initial conditition for another simulation,
-    increasing γ by 0.05. Repeat this until γ = 1.4. At this point,
-    ”turn around”: lower γ by 0.05, run another simulation, repeat until
-    γ = 0.4 again. Each time, use the previous result as the initial condition
-    to the next simulation. Plot average global temperature versus γ. Answer
-    the science question, does the snowball Earth hypothesis represent an
-    equilibrium solution that is stable? What does this plot tell you about the
-    stability of the different equilibria? Given the large range for γ and
-    considering the historical variation of S0, do you think that
-    snowball Earth is a valid hypothesis?
+    Returns pcolor plot of 10000-year equilibrium earth temperatures. The
+    values in this plot are created by running snowball_earth() with varying
+    "solar multiplier" factor, gamma, applied to insolation term. Gamma is
+    varied up and then back down, using previous gamma step initial
+    condition.
 
     Parameters
     ----------
@@ -568,6 +553,8 @@ def problem4(emis=0.708, lam=25.):
     cbartemps = plt.colorbar(tempmap, ax=ax,  location='right',
                              orientation='vertical')
     cbartemps.set_label(r"Temperature ($^{\circ}C$)", rotation=270)
+
+    fig.tight_layout()
 
     # Return figure to caller
     return fig
