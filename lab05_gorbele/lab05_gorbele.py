@@ -282,17 +282,10 @@ def test_gen_grid():
 
 def problem1():
     '''
-    Plots three outputs of the snowball_earth function with varying input
-
-
-    "Code up the solver shown in Equation 4. Do this in parts: begin with only
-    the basic diffusion solver (Equation 2). Use the values given in Table 1
-    and try to reproduce the red line in Figure 1. For this part, use an
-    albedo of 0.3 at all points on your grid. Then, add in the spherical
-    correction term (Equation 3) and work until you can reproduce the gold line
-    in Figure 1. Finally, include the radiative forcing term (Equation 4);
-    work to reproduce the green line in Figure 1. Include your validation
-    steps in your lab report."
+    Plots three outputs of the snowball_earth function: diffusive heat
+    transfer; diffusive heat transfer and a spherical correction term; and
+    diffusive heat transfer, a spherical correction term, and incoming and
+    outgoing radiation. Initial condition is also on the same plot.
 
     Returns
     -------
