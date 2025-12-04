@@ -3,6 +3,29 @@
 '''
 Lab 05: Explores heat transfer in a spherical system and insolation as drivers
 for a Snowball Earth scenario, as well as the consequences of these dynamics.
+
+TO REPRODUCE THE VALUES AND PLOTS IN MY REPORT, DO THIS:
+Ensure that any libraries imported below are installed to the user's
+instance of python3.
+In a terminal window opened to the directory (folder) that has this script
+and is running python, enter `$ run lab05_gorbele.py`. The $ sign is not typed
+by the user, but indicates where shell input begins.
+
+Plots and results can be obtained by running the commands:
+`$ problem1()`, which addresses science question #1. `$ problem2()`,
+which addresses science question #2, `$ problem3()`, which addresses science
+question #3, and `$ problem4()`, which adresses science question #4. For the
+problem3() and problem4() functions, the default values of the inputs are
+obtained from the output from problem2(). If problem2() is edited such that
+different outputs from the default values in the other two functions, use those
+values in the parameters for problem3 and problem4
+(i.e. `$ problem3(emis=0.33, lam=55)`). To show the plots from the
+terminal, after running one of these commands, the user can run `$ plt.show()`
+to display the current plot.
+
+Note that, until the plot is closed or unless interactive mode is turned on,
+the terminal will be occupied running the plot and will not
+be able to run any additional functions.
 '''
 
 import numpy as np
