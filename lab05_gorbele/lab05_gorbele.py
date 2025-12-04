@@ -1,29 +1,9 @@
 #!/usr/bin/env Python3
 
 '''
-Lab 05: Snowing Balling
+Lab 05: Explores heat transfer in a spherical system and insolation as drivers
+for a Snowball Earth scenario, as well as the consequences of these dynamics.
 '''
-
-# Starting w/ insolation and varying w/ latitude
-
-# Diffuse heat thru 50m ocean depth
-
-#temp diffuses across latitudes
-# heat flux: q = -D(dT/dy)
-# Heat diffusion
-
-#dT/dt = lam(d^2T/dy^2)+lam/Axz(dT/dy)(dAxz/dy)
-# Last term is spherical coordinate correction
-
-# (__I-delt*lam*__K) == __L
-# _Tj+1 = __L^-1(_Tj+delt*lam*_f(_Tj,y))
-
-#delt*lam*_F(_Tj,y) = lam*delt/Axz*1/(4dely^2)(__BTj)(__BAj)
-# Evaluated at current time
-
-#dTinsol/dt = 1/(rho*C*dz)*(S(y)(1-alpha)-eps*sig*T^4)
-# Change in temperature of surface due to insolation
-
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -260,7 +240,7 @@ def snowball_earth(nlat=18, tfinal=10000., dt=1., lam=100., emis=emissivity,
 
 def test_gen_grid():
     '''
-    This function runs tests to ensure that 
+    This function runs a test to ensure that gen_grid() functions as intended.
     '''
 
     print("test gen_grid():")
@@ -413,7 +393,7 @@ def problem2():
     print(f"Optimal emissivity for lambda of {lhold} m^2/s: {emisopt:.3f}")
     print(f"Scenario Average Residual: {emisOptAvgResid:.3f} Deg C")
     print(f"Average Residual for combined optimal choices: {combOptAvgResid:.3f} Deg C")
-    print(f"Best choice of lambda and emis resulted in lowest Average Residual")
+    print("Best choice of lambda and emis resulted in lowest Average Residual")
 
     # Return figure to caller
     return fig
