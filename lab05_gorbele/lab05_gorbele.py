@@ -263,7 +263,7 @@ def snowball_earth(nlat=18, tfinal=10000., dt=1., lam=100., emis=emissivity,
     return lats, Temp
 
 
-def test_functions():
+def test_gen_grid():
     '''
     This function runs tests to ensure that 
     '''
@@ -278,16 +278,12 @@ def test_functions():
         print('\tFAILED!')
         print(f"Expected: {dlat_correct}, {lats_correct}")
         print(f"Got: {results}")
-    
 
-
-
-    # TO DO: make a test case for each function up there to make sure it works 
-    
 
 def problem1():
     '''
-    Plots three methods of the snowball_earth function and their 
+    Plots three outputs of the snowball_earth function with varying input
+
 
     "Code up the solver shown in Equation 4. Do this in parts: begin with only
     the basic diffusion solver (Equation 2). Use the values given in Table 1
@@ -436,17 +432,8 @@ def problem2():
 
 def problem3(emis=0.708, lam=25.):
     '''
-    Plots impact of initial conditions on 10000-year equilibrium conditions:
-    cold, hot, and warm earth.
-
-    Use your function to explore how initial conditions affect the equilibrium
-    solution. Switch from constant albedo to dynamic albedo. Begin with a ”hot”
-    Earth (60◦ at all locations)- what is your equilibrium solution? Repeat
-    with a ”cold” Earth (-60◦ at all locations) - what is your equilibrium
-    solution? Finally, ”flash freeze” the Earth by starting with the warm
-    Earth solution curve you used in Part 1 and 2, but now set albedo to 0.6.
-    How do these results compare to each other? What does it tell us about the
-    stability of snowball vs. warm Earth solutions?
+    Plots impact of initial conditions on 10000-year snowball_earth()
+    equilibrium conditions: cold; hot; and warm earth, under dynamic albedo.
 
     Parameters
     ----------
