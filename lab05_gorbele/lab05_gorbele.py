@@ -528,6 +528,7 @@ def problem4(emis=0.708, lam=25.):
     ax.set_yticklabels(ylabels)
     ax.set_xlabel("Insolation Multiplier γ")
     ax.set_ylabel(r"Latitude ($^{\circ}$)")
+    ax.set_title("Latitudinal temperature distribution by Insolation and initial condition.")
 
     # Create colorbar and label properly, set colormap to be mirrored about 0
     cbartemps = plt.colorbar(tempmap, ax=ax,  location='right',
