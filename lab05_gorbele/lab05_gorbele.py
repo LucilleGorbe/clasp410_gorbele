@@ -156,7 +156,7 @@ def insolation(S0, lats):
 
 def snowball_earth(nlat=18, tfinal=10000., dt=1., lam=100., emis=emissivity,
                    init_cond=temp_warm, apply_spherecorr=False,
-                   apply_insol=False, solar=S0, albice=0.6, albgnd=.3):
+                   apply_insol=False, solar=S0, albice=Afrozen, albgnd=Awater):
     '''
     This function does things and makes it cold. Brr!
 
@@ -300,7 +300,7 @@ def problem1():
     lats, temp_diffspcor = snowball_earth(apply_spherecorr=True)
     # Call plus-solar-forcing with constant albedo across surface
     lats, temp_alls = snowball_earth(apply_spherecorr=True, apply_insol=True,
-                                     albice=0.3)
+                                     albice=Awater)
 
     # Create plot and plot all lines for different modes of earth solver
     fig, ax = plt.subplots(1, 1)
@@ -312,7 +312,7 @@ def problem1():
             label='Diffusion, Spherical Correction, and Radiative')
 
     # Label the plot appropriately
-    ax.set_title('Solution after 10000 Years')
+    ax.set_title('Temperature distribution after 10000 Years')
     ax.set_ylabel(r'Temp ($^{\circ}C$)')
     ax.set_xlabel(r'Latitude ($^{\circ}$)')
     ax.legend(loc='best')
@@ -397,13 +397,13 @@ def problem2():
     # Store avg residuals for both situations, try combining optimals, too
     lats, temp_lamopt = snowball_earth(nlat=nlats, lam=lamopt, emis=ehold,
                                        apply_spherecorr=True,
-                                       apply_insol=True, albice=0.3)
+                                       apply_insol=True, albice=Afrozen)
     lats, temp_emisopt = snowball_earth(nlat=nlats, lam=lhold, emis=emisopt,
                                         apply_spherecorr=True,
-                                        apply_insol=True, albice=0.3)
+                                        apply_insol=True, albice=Afrozen)
     lats, temp_opt = snowball_earth(nlat=nlats, lam=lamopt, emis=emisopt,
                                     apply_spherecorr=True,
-                                    apply_insol=True, albice=0.3)
+                                    apply_insol=True, albice=Afrozen)
 
     combOptAvgResid = np.sum(np.abs(temp_opt - warm_baseline)) / nlats
     lamOptAvgResid = np.sum(np.abs(temp_lamopt - warm_baseline)) / nlats
@@ -446,14 +446,14 @@ def problem3(emis=0.708, lam=25.):
     # Run simulation with hot and cold conditions and dynamic albedo
     lats, temp_hot = snowball_earth(nlat=nlat, lam=lam, emis=emis,
                                     init_cond=60., apply_spherecorr=True,
-                                    apply_insol=True, albice=0.6)
+                                    apply_insol=True, albice=Afrozen)
     lats, temp_cold = snowball_earth(nlat=nlat, lam=lam, emis=emis,
                                      init_cond=-60., apply_spherecorr=True,
-                                     apply_insol=True, albice=0.6)
+                                     apply_insol=True, albice=Afrozen)
     lats, temp_flash = snowball_earth(nlat=nlat, lam=lam, emis=emis,
                                       init_cond=temp_warm,
                                       apply_spherecorr=True,
-                                      apply_insol=True, albice=0.6)
+                                      apply_insol=True, albice=Afrozen)
 
     fig, ax = plt.subplots(1, 1, figsize=(4, 6))
 
@@ -512,7 +512,7 @@ def problem4(emis=0.708, lam=25.):
                                           init_cond=init_temps,
                                           apply_spherecorr=True,
                                           apply_insol=True, solar=(S0 * gam),
-                                          albice=0.6)
+                                          albice=Afrozen)
         temps_gamma[:, i] = init_temps
 
     # Create figure and axis
