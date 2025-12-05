@@ -352,7 +352,7 @@ def problem2():
     # average absolute difference from temp_warm (RSE) and then plot it against
     # lambda and emissivity
 
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 8))
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 4))
 
     # Create empty arrays to store residuals
     lamResids = np.zeros(lam.size)
@@ -381,14 +381,14 @@ def problem2():
     ax1.plot(lam, lamAvgResids)
     ax1.set_xlabel(r'${\lambda}$ ($\frac{m^2}{s}$)')
     ax1.set_ylabel(r'Average Temp. Residual ($^{\circ}C$)')
-    ax1.set_title(f'Average Temperature Residual by lambda for emissivity={ehold}')
+    ax1.set_title(f'ATR by lambda for emissivity={ehold}')
 
     ax2.plot(emis, emisAvgResids)
     ax2.set_xlabel('Emissivity')
     ax2.set_ylabel(r'Average Temp. Residual ($^{\circ}C$)')
-    ax2.set_title(f'Average Temperature Residual by emissivity for lambda={lhold}')
+    ax2.set_title(f'ATR by emissivity for lambda={lhold}')
 
-    fig.suptitle('Average Temperature Residuals from Given Warm Earth by lambda and emissivity')
+    fig.suptitle('Average Temperature Residual (ATR) from Given Warm Earth by lambda and emissivity')
 
     # Find optimal lambda and emissivity under established conditions
     lamopt = lam[np.argmin(lamAvgResids)]
@@ -418,6 +418,8 @@ def problem2():
     print(f"Average Residual for combined optimal choices: {combOptAvgResid:.3f} Deg C")
     print("Best choice of lambda and emis resulted in lowest Average Residual")
 
+    fig.tight_layout()
+
     # Return figure to caller
     return fig
 
@@ -446,7 +448,7 @@ def problem3(emis=0.708, lam=25.):
                                     init_cond=60., apply_spherecorr=True,
                                     apply_insol=True, albice=0.6)
     lats, temp_cold = snowball_earth(nlat=nlat, lam=lam, emis=emis,
-                                     init_cond=60., apply_spherecorr=True,
+                                     init_cond=-60., apply_spherecorr=True,
                                      apply_insol=True, albice=0.6)
     lats, temp_flash = snowball_earth(nlat=nlat, lam=lam, emis=emis,
                                       init_cond=temp_warm,
