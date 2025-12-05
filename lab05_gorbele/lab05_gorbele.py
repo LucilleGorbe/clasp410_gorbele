@@ -190,7 +190,7 @@ def snowball_earth(nlat=18, tfinal=10000., dt=1., lam=100., emis=emissivity,
     lats : numpy array
         Latitudes representing cell centers in degrees; 0
     Temp : numpy array
-        dsahbdhasd
+        Latitudinal array of temperatures at tfinal equilibrium
     '''
 
     dlat, lats = gen_grid(nlat)
