@@ -48,7 +48,7 @@ def solve_heat(func_0, func_ub, func_lb, xstop=100., tstop=150*365., dx=1,
     func_lb : function
         A python function that takes `t` as input and returns the lower
         conditions of the diffusion example under consideration.
-    dx, dt : floats, defaults = 0.1m, 0.1 days
+    dx, dt : floats, defaults = 1m, 0.1 days
         Space and time step, respectively
     xstop, tstop : floats, defaults = 100m, 18,250 days (50 years)
         Length of object and time under consideration
@@ -354,7 +354,8 @@ def kanger_diffusion(dt=0.1, tstop=150*365):
     winter = U[:, loc:].min(axis=1)
     summer = U[:, loc:].max(axis=1)
 
-    # Create a temp profile plot:
+    # Create a temp profile plot with a vertical line for ref:
+    ax2.vlines(0, 0, 100, linestyles='dashed', color='gray')
     ax2.plot(winter, x, 'b--', label='Winter')
     ax2.plot(summer, x, 'r--', label='Summer')
 
@@ -366,7 +367,7 @@ def kanger_diffusion(dt=0.1, tstop=150*365):
     ax1.set_title('Ground Temperature Profile by Depth and Time')
     ax1.set_ylabel('Depth ($m$)')
     ax1.set_xlabel('Time ($Years$)')
-    ax2.set_title('Ground Temperature Profile by Depth and Season')
+    ax2.set_title(f'Ground Temperature Profile by Depth and Season, Year {int(tstop/365)}')
     ax2.set_ylabel('Depth ($m$)')
     ax2.set_xlabel(r'Temperature ($^{\circ}C$)')
     ax2.legend(loc='best')
