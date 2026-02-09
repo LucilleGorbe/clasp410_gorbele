@@ -446,7 +446,7 @@ def temp_kangerub_30(t):
 
 # --------------------- Global Warming Permafrost Solver ----------------------
 
-def kanger_gw_diffusion(tstop=50*365, dt=0.1):
+def kanger_gw_diffusion(tstop=75*365, dt=0.1):
     '''
     Plots 1-D equilibrium temperature profile from surface to 100m depth at
     Kangerlassuaq, Greenland time under different global warming conditions.
@@ -515,8 +515,9 @@ def kanger_gw_diffusion(tstop=50*365, dt=0.1):
         ax.yaxis.set_inverted(True)
 
     # Provide legends and titles for interpretation
-    ax2.set_title('Summer Ground Temperature Profile\nby Depth Under Warming Regimes')
-    ax1.set_title('Winter Ground Temperature Profile\nby Depth Under Warming Regimes')
+    ax2.set_title(f'Summer')
+    ax1.set_title(f'Winter')
+    fig.suptitle(f"Ground Temperature Profile\nby Depth Under Warming Regimes, year {int(tstop/365)}")
     ax1.legend(loc='best')
     ax2.legend(loc='lower right')
 
@@ -536,11 +537,11 @@ def kanger_gw_diffusion(tstop=50*365, dt=0.1):
     print(f"Active layer depth at {int(tstop/365)} years: {active_layer05} m")
     print(f"Permafrost depth at {int(tstop/365)} years: {pf_lower05} m\n")
 
-    print("Permafrost conditions for 0.5 degrees C warming:")
+    print("Permafrost conditions for 1.0 degrees C warming:")
     print(f"Active layer depth at {int(tstop/365)} years: {active_layer10} m")
     print(f"Permafrost depth at {int(tstop/365)} years: {pf_lower10} m\n")
 
-    print("Permafrost conditions for 0.5 degrees C warming:")
+    print("Permafrost conditions for 3.0 degrees C warming:")
     print(f"Active layer depth at {int(tstop/365)} years: {active_layer30} m")
     print(f"Permafrost depth at {int(tstop/365)} years: {pf_lower30} m")
 
