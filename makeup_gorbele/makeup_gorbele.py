@@ -10,9 +10,9 @@ and is running python, enter `$ run makeup_gorbele.py`. The $ sign is not typed
 by the user, but indicates where shell input begins.
 
 Plots and results can be obtained by running the commands:
-`$ sim_validation()`, which addresses science question #1.
-`$ ### FILL IN HERE`, which addresses science question #2, and
-`$ ### FILL IN HERE`, which adresses science question #3.
+`$ validation()`, which addresses science question #1.
+`$ curved()`, which addresses science question #2, and
+`$ runout()`, which adresses science question #3.
 Plots are saved with descriptive names and are labelled.
 To show the plots from the terminal, after running one of these commands,
 the user can run `$ plt.show()` to display the current plot.
@@ -87,9 +87,9 @@ def avasim(x, theta_deg, Snf, Cx, phi_deg=35.0, dt=0.1,
         x location of the slope, in meters. Spatial location is arbitrary.
     theta_deg : vector of floats
         Angle of slope for each cell of the mountain's snowpack, in degrees.
-    Snf : float
-        Global snowfall rate, m/hr
-    Cx : float or vector of floats
+    Snf : vector of floats
+        Snowfall rate, m/hr
+    Cx : vector of floats
         Cohesion strength of the snowpack, in Pascals.
     phi_deg : float, defaults to 35.0 degrees
         Friction angle of snowpack.
@@ -111,8 +111,8 @@ def avasim(x, theta_deg, Snf, Cx, phi_deg=35.0, dt=0.1,
         h += h0
 
     # Store history of snowfall accumulation and stability as well as time vec.
-    h_t = np.zeros(steps, N)
-    S_t = np.zeros(steps, N)
+    h_t = np.zeros((steps, N))
+    S_t = np.zeros((steps, N))
     time = np.linspace(0, dt*steps, steps)
 
     # Store initial stability and heights
@@ -122,6 +122,7 @@ def avasim(x, theta_deg, Snf, Cx, phi_deg=35.0, dt=0.1,
     # Init first fail time and location storage
     fail_time = None  # Take a page out of Rouhan's book with the use of None
     fail_x = None
+    fail_time_idx = None
 
     # Store total outflow of snow
     outflow = 0.0  # in m
@@ -144,12 +145,16 @@ def avasim(x, theta_deg, Snf, Cx, phi_deg=35.0, dt=0.1,
         # Sweep from the summit to the base of the setup
         # Assumes time of collapse and movement is much faster than snowfall
         for i in range(N-1, -1, -1):
-            # Check ratio
+            # Check ratio, if stable then go past this one
             if ratio[i] >= 1.0 or h[i] <= 0.0:
                 continue
+            
+            # If ratio is now failing, make None failure time and point into
+            # the reported failure time and location.
             if fail_time is None:
                 fail_time = t*dt  # hrs
                 fail_x = i  # meters
+                fail_time_idx = t  # index for computing L later
             # Unstable cells send snow downward in a failure
             carry = h[i] * flow_rate
             h[i] -= carry
@@ -184,12 +189,11 @@ def avasim(x, theta_deg, Snf, Cx, phi_deg=35.0, dt=0.1,
     # Return height, stability, and time arrays, along with total outflow
     # And failure timing + location along slope
     # Transpose h_t and S_t such that x is on the x-axis
-    return h_t.transpose(), S_t.transpose(), time, outflow, (fail_time, fail_x)
+    return h_t.transpose(), S_t.transpose(), time, outflow, (fail_time, fail_x, fail_time_idx)
 
 
-def snowplot(npoints=100, theta_deg=40.0, linear=True, phi_deg=35.0,
-             Cxpeak=500.0, Sxpeak=0.1, dt=0.1, steps=600, flow_rate=0.3,
-             h0=None, **kwargs):
+def snowplot(npoints=100, theta_deg=40.0, curved=False, phi_deg=35.0, Cxpeak=500.0, Sxpeak=0.1, 
+             dt=0.1, steps=600, flow_rate=0.3, h0=None, **kwargs):
     '''
     Creates figure and axes objects with required plots on them and returns
     them to answer each question.
@@ -198,25 +202,41 @@ def snowplot(npoints=100, theta_deg=40.0, linear=True, phi_deg=35.0,
     -----
     npoints : int, defaults to 100
         The number of points along the x-axis for computation.
-    Sxlinear : boolean, defaults to True
-        Decides linear vs curved case for snowpack slope
-
+    curved : boolean, defaults to False
+        Decides constant vs curved case for snowpack slope
+    phi_deg : float, defaults to 35.0 degrees
+        Friction angle of snowpack.
     Cxpeak : float or vector of floats, defaults to 500.0 Pa
         Cohesion of snow across cells, or, if Cxbase is defined, at peak of
         snowpack, in Pascals
     Sxpeak : float, defaults to 0.1 m/hr
         Snowfall rate across cells, or, if Sxbase is defined, at peak of
         snowpack, in m/hr.
+    dt : float, defaults to 0.1 hrs
+        Time step of the solver in hours
+    steps : int, defaults, to 600
+        Amount of time steps taken by the solver
+    flow_rate : float, defaults to 0.3 1/hr
+        Ratio of mass that transfers down cells when spilling
+    h0 : float or vector of floats, defaults to 0m
+        Starting height of the snowpack
     Cxbase : float, optional
         Cohesion of snow at bottom of snowpack, in Pascals. If not provided,
         cohesion is equal across all cells and defined by Cxpeak.  
     Sxbase : float, optional
         Snowfall rate at bottom of snowpack, in m/hr. If not provided, snowfall
         is equal across all cells and defined by Sxpeak.
+
+    Returns
+    -----
+    fig : matplotlib figure object
+        The figure that is plotted on
+    time : vector of floats
+        Timeline for the occurrence
     '''
 
     # 1. Create the spatial grid (x in units of m)
-    x = np.arange(0, 1000, npoints)
+    x = np.linspace(0, 1000, npoints)
 
     # Check if base snowfall rate is defined
     Sxbase = kwargs.get('Sxbase')
@@ -225,66 +245,118 @@ def snowplot(npoints=100, theta_deg=40.0, linear=True, phi_deg=35.0,
     # 2. Define Topography
     # For Question 1: Linear slope at 40 degrees
     # For other questions : Curved slope from 10 to 50 degrees
-    if linear:
-        theta = np.full_like(x, 40.0)
+    if not curved:
+        theta = np.full_like(x, theta_deg)
     else:
         theta = np.interp(x, [0, 1000], [10, 50])
 
     # Create snowfall rate depending on definition of base snowfall rate
     if Sxbase is None:
-        # Use Sxpeak value as default
-        Sx = Sxbase
-    else:
-        # Linearly interpolate snowfall rate from peak of mtn to base of mtn
-        Sx = np.interp(x, [0, 1000], [Sxpeak, Sxbase])
-
-    # Create snowfall rate depending on definition of base snowfall rate
-    if Sxbase is None:
-        # Use Sxpeak value as default
-        Sx = Sxpeak
+        # Use Sxpeak value as constant snowfall
+        Sx = np.full_like(x, Sxpeak)
     else:
         # Linearly interpolate snowfall rate from base of mtn to peak of mtn
         Sx = np.interp(x, [0, 1000], [Sxbase, Sxpeak])
 
     # Create snow cohesion depending on definition of base cohesion
     if Cxbase is None:
-        # Use Sxpeak value as default
-        Cx = Cxpeak
+        # Use Sxpeak value as constant cohesion
+        Cx = np.full_like(x, Cxpeak)
     else:
         # Linearly interpolate snowfall rate from base of mtn to peak of mtn
         Cx = np.interp(x, [0, 1000], [Cxbase, Cxpeak])
 
     # Run the simulation and store the outputs
     h_t, S_t, time, outflow, fail = avasim(x=x, theta_deg=theta, Snf=Sx, Cx=Cx,
-                                           theta_deg=theta_deg,
-                                           phi_deg=phi_deg, Cxpeak=Cxpeak,
-                                           dt=dt, steps=steps,
+                                           phi_deg=phi_deg, dt=dt, steps=steps,
                                            flow_rate=flow_rate, h0=h0)
 
     # Make four plots
-    fig, axes = plt.subplots(2, 2, figsize=(10, 10))
-
+    fig, axes = plt.subplots(2, 2, figsize=(12, 8))
     
     # Plot h_t over time and space
-    h_t_pcolor = axes[0, 0].pcolormesh(x, time, h_t, cmap='bone',
-                                       shading='gouraud')
-    # Plot max h_t over time
+    h_t_pcolor = axes[0, 0].pcolor(time, x, h_t, cmap='bone',
+                                   shading='auto')
+    h_cbar = fig.colorbar(h_t_pcolor, ax=axes[0, 0])
+    h_cbar.set_label("Height (m)")
+    axes[0, 0].set_title('Height of Snowpack over Time')
+    axes[0, 0].set_ylabel("Location from Base (m)")
+    axes[0, 0].set_xlabel("Time (hrs)")
+
+    # Plot max h_t over time, along with h_crit
+    axes[0, 1].plot(time, h_t.max(axis=0), label='Max. Height')
+    axes[0, 1].set_title("Maximum Height of Snowpack over Time")
+    axes[0, 1].set_xlabel("Time (hrs)")
+    axes[0, 1].set_ylabel("Height of Snowpack (m)")
+
     # Plot S_t over time and space
-    S_t_pcolor = axes[1, 0].pcolormesh(x, time, S_t, cmap='bone', 
-                                       shading='gouraud')
-    # Plot min S_t over time
-    # Report outflow, first fail time and location
+    S_t_pcolor = axes[1, 0].pcolor(time, x, S_t, cmap='summer_r', 
+                                   shading='auto')
+    S_cbar = fig.colorbar(S_t_pcolor, ax=axes[1, 0])
+    S_cbar.set_label("Stability")
+    axes[1, 0].set_title('Stability of Snowpack over Time')
+    axes[1, 0].set_ylabel("Location from Base (m)")
+    axes[1, 0].set_xlabel("Time (hrs)")
 
+    # Plot min S_t over time, along with S_crit
+    axes[1, 1].plot(time, S_t.min(axis=0), c='yellow', label="Stability")
+    axes[1, 1].plot(time, np.full_like(time, 1.0,), c='k', ls='--', 
+                    label="Critical Stability")
+    axes[1, 1].set_title("Minimum Stability of Snowpack over Time")
+    axes[1, 1].set_xlabel("Time (hrs)")
+    axes[1, 1].set_ylabel("Stability of Snowpack")
+    axes[1, 1].legend(loc='best')
 
+    fig.tight_layout()
 
-    return fig
+    # Report outflow, first fail time and location, and furthest location of
+    print("Total outflow:", outflow, "m of snow.")
+    if fail[0] is not None:
+        print("First failure time:", fail[0], "Hours")
+        print("First failure location:", fail[1], "m from base of slope")
+        # For Q3: L, runout dist, is defined as first failure location to final
+        # nonzero accumulation. "Nonzero" is defined as 0.03m for our purposes.
+        print("Runout distance:", fail[1] - x[h_t[:,fail[2]] > 0.03][0], "m")
+
+    return fig, time
     
 
-def validation():
+def validation(npoints=100):
     '''
     This function validates the avasim solver by comparing modeled results to
     a calculated theoretical critical depth. Answers science question #1.
+
+    Parameters
+    -----
+    npoints : int, defaults to 100
+        The number of points along the x-axis for computation.
+
+    Returns
+    -----
+    fig : matplotlib figure object
+        The figure that is plotted on
     '''
 
-    # Define non-default variables
-    Cx = 500.0
+    # Calculate h_crit as outlined in science question #1
+    C = 500  # Pascals
+    theta = 40  # Degrees
+    phi = 35  # Degrees
+
+    # Calculate and report h_crit
+    h_crit = C / (rho_snow * g * (np.sin(np.radians(theta)) - np.cos(np.radians(theta)) * np.tan(np.radians(phi))))
+    print("h_crit =", h_crit, "m")
+
+    # Run simulation and capture figure and axes
+    # Using no inputs, as the defaults are fine this time
+    fig, time = snowplot(npoints=npoints)
+    fig.axes[1].plot(time, np.full_like(time, h_crit), c='r', ls='--', label=f"h_crit={h_crit} m")
+    fig.axes[1].legend(loc='best')
+
+    return fig
+
+def curved():
+    '''
+    This function modifies the model to use spatially varying slope. It then
+    tests snow properties, snowfall distribution and cohesion, to see how
+    their variation might impact avalanche dynamics. Answers question #2.
+    '''
