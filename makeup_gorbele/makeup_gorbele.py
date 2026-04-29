@@ -76,7 +76,7 @@ def get_stability(h, theta_deg, C, phi_deg=35):
 
 
 def avasim(x, theta_deg, Snf, Cx, phi_deg=35.0, dt=0.1,
-           steps=600, flow_rate=0.3, h0=None, seed=410):
+           steps=600, flow_rate=0.3, h0=None):
     '''
     This function simulates avalanche dynamics via a discretized analysis of
     the Mohr-Coulomb rule on a 2-dimensional (space and time) array.
@@ -84,17 +84,15 @@ def avasim(x, theta_deg, Snf, Cx, phi_deg=35.0, dt=0.1,
     Parameters
     -----
     x : vector of floats
-        x location of 
+        x location of the slope, in meters. Spatial location is arbitrary.
     theta_deg : vector of floats
         Angle of slope for each cell of the mountain's snowpack, in degrees.
     Snf : float
         Global snowfall rate, m/hr
     Cx : float or vector of floats
-        Cohesion strength of the snowpack, in Pa.
-    linear : boolean
-        Linearity or non-linearity of 
+        Cohesion strength of the snowpack, in Pascals.
     phi_deg : float, defaults to 35.0 degrees
-
+        Friction angle of snowpack.
     dt : float, defaults to 0.1 hrs
         Time step of the solver in hours
     steps : int, defaults, to 600
@@ -112,32 +110,52 @@ def avasim(x, theta_deg, Snf, Cx, phi_deg=35.0, dt=0.1,
         # Add h0
         h += h0
 
-    # Store the first time of failure
-    t_fail = 9999  # Placeholder value
+    # Store history of snowfall accumulation and stability as well as time vec.
+    h_t = np.zeros(steps, N)
+    S_t = np.zeros(steps, N)
+    time = np.linspace(0, dt*steps, steps)
 
+    # Store initial stability and heights
+    h_t[0] = h
+    S_t[0] = get_stability(h, theta_deg=theta_deg, C=Cx, phi_deg=phi_deg)
+
+    # Init first fail time and location storage
+    fail_time = None  # Take a page out of Rouhan's book with the use of None
+    fail_x = None
 
     # Store total outflow of snow
     outflow = 0.0  # in m
 
+    # Define gamma and alpha,
+    # parameters of how much snow gets carried down past initial cell of spill.
+    # These parameters are arbitrary, and could be replaced with parameters
+    # with stronger physical bases in other iterations of the solver.
+    alpha = 0.45
+    gamma = 0.10
 
-    # Start time loop
-    for t in range(steps):
-        # Track time
-        time = t*dt
+    # Start time loop from t=1
+    for t in range(1, steps):
+        # Add snowfall at the top of each time loop
         h += Snf
 
         # Calculate ratio of whole slope
         ratio = get_stability(h, theta_deg=theta_deg, C=Cx, phi_deg=phi_deg)
 
         # Sweep from the summit to the base of the setup
+        # Assumes time of collapse and movement is much faster than snowfall
         for i in range(N-1, -1, -1):
             # Check ratio
             if ratio[i] >= 1.0 or h[i] <= 0.0:
                 continue
+            if fail_time is None:
+                fail_time = t*dt  # hrs
+                fail_x = i  # meters
+            # Unstable cells send snow downward in a failure
             carry = h[i] * flow_rate
             h[i] -= carry
             j = i - 1
             while carry > 1e-9 and j >= 0:
+                # Push significant carry into receiver cell
                 h[j] += carry
 
                 # Re-check receiver stability
@@ -145,11 +163,12 @@ def avasim(x, theta_deg, Snf, Cx, phi_deg=35.0, dt=0.1,
                                          np.array([theta_deg[j]]),
                                          np.array([Cx[j]]), phi_deg))
 
-                # If receiver ratio is now collapsing, spill!
+                # If receiver ratio is now unstable, continue spill
                 if rj < 1.0:
                     spill = alpha * flow_rate * h[j]
                 else:
-                    spill = gamma * h[j]
+                    # If not now unstable, push weaker spill
+                    spill = gamma * flow_rate * h[j]
 
                 # Carry the spill over
                 h[j] -= spill
@@ -158,11 +177,19 @@ def avasim(x, theta_deg, Snf, Cx, phi_deg=35.0, dt=0.1,
             if carry > 0.0 and j < 0:
                 outflow += carry
 
-    # Return height array
-    return h_t, S_t
+        # Store height and ratio
+        h_t[t] = h
+        S_t[t] = ratio
+
+    # Return height, stability, and time arrays, along with total outflow
+    # And failure timing + location along slope
+    # Transpose h_t and S_t such that x is on the x-axis
+    return h_t.transpose(), S_t.transpose(), time, outflow, (fail_time, fail_x)
 
 
-def snowplot(npoints=100, linear=True, theta_deg=40.0, phi_deg=35.0, Cx=500.0, Sxpeak=0.1, **kwargs):
+def snowplot(npoints=100, theta_deg=40.0, linear=True, phi_deg=35.0,
+             Cxpeak=500.0, Sxpeak=0.1, dt=0.1, steps=600, flow_rate=0.3,
+             h0=None, **kwargs):
     '''
     Creates figure and axes objects with required plots on them and returns
     them to answer each question.
@@ -171,15 +198,20 @@ def snowplot(npoints=100, linear=True, theta_deg=40.0, phi_deg=35.0, Cx=500.0, S
     -----
     npoints : int, defaults to 100
         The number of points along the x-axis for computation.
-    linear : boolean, defaults to True
+    Sxlinear : boolean, defaults to True
         Decides linear vs curved case for snowpack slope
-    Cx : float or vector of floats, defaults to 500.0 Pa
-        Cohesion of snow, in units of Pascals
+
+    Cxpeak : float or vector of floats, defaults to 500.0 Pa
+        Cohesion of snow across cells, or, if Cxbase is defined, at peak of
+        snowpack, in Pascals
     Sxpeak : float, defaults to 0.1 m/hr
         Snowfall rate across cells, or, if Sxbase is defined, at peak of
         snowpack, in m/hr.
+    Cxbase : float, optional
+        Cohesion of snow at bottom of snowpack, in Pascals. If not provided,
+        cohesion is equal across all cells and defined by Cxpeak.  
     Sxbase : float, optional
-        Snowfall rate at base of snowpack, in m/hr. If not provided, snowfall
+        Snowfall rate at bottom of snowpack, in m/hr. If not provided, snowfall
         is equal across all cells and defined by Sxpeak.
     '''
 
@@ -188,14 +220,7 @@ def snowplot(npoints=100, linear=True, theta_deg=40.0, phi_deg=35.0, Cx=500.0, S
 
     # Check if base snowfall rate is defined
     Sxbase = kwargs.get('Sxbase')
-
-    # Create snowfall rate depending on definition of base snowfall rate
-    if Sxbase is None:
-        # Use Sxpeak value as default
-        Sx = Sxpeak
-    else:
-        # Linearly interpolate snowfall rate from peak of mtn to base of mtn
-        Sx = np.interp(x, [x.min(), x.max()], [Sxpeak, Sxbase])
+    Cxbase = kwargs.get('Cxpeak')
 
     # 2. Define Topography
     # For Question 1: Linear slope at 40 degrees
@@ -205,9 +230,55 @@ def snowplot(npoints=100, linear=True, theta_deg=40.0, phi_deg=35.0, Cx=500.0, S
     else:
         theta = np.interp(x, [0, 1000], [10, 50])
 
-    # Run the simulation and store the outputs
-    sim = avasim(x=x, theta_deg=theta, Snf=Sx, Cx=Cx)
+    # Create snowfall rate depending on definition of base snowfall rate
+    if Sxbase is None:
+        # Use Sxpeak value as default
+        Sx = Sxbase
+    else:
+        # Linearly interpolate snowfall rate from peak of mtn to base of mtn
+        Sx = np.interp(x, [0, 1000], [Sxpeak, Sxbase])
 
+    # Create snowfall rate depending on definition of base snowfall rate
+    if Sxbase is None:
+        # Use Sxpeak value as default
+        Sx = Sxpeak
+    else:
+        # Linearly interpolate snowfall rate from base of mtn to peak of mtn
+        Sx = np.interp(x, [0, 1000], [Sxbase, Sxpeak])
+
+    # Create snow cohesion depending on definition of base cohesion
+    if Cxbase is None:
+        # Use Sxpeak value as default
+        Cx = Cxpeak
+    else:
+        # Linearly interpolate snowfall rate from base of mtn to peak of mtn
+        Cx = np.interp(x, [0, 1000], [Cxbase, Cxpeak])
+
+    # Run the simulation and store the outputs
+    h_t, S_t, time, outflow, fail = avasim(x=x, theta_deg=theta, Snf=Sx, Cx=Cx,
+                                           theta_deg=theta_deg,
+                                           phi_deg=phi_deg, Cxpeak=Cxpeak,
+                                           dt=dt, steps=steps,
+                                           flow_rate=flow_rate, h0=h0)
+
+    # Make four plots
+    fig, axes = plt.subplots(2, 2, figsize=(10, 10))
+
+    
+    # Plot h_t over time and space
+    h_t_pcolor = axes[0, 0].pcolormesh(x, time, h_t, cmap='bone',
+                                       shading='gouraud')
+    # Plot max h_t over time
+    # Plot S_t over time and space
+    S_t_pcolor = axes[1, 0].pcolormesh(x, time, S_t, cmap='bone', 
+                                       shading='gouraud')
+    # Plot min S_t over time
+    # Report outflow, first fail time and location
+
+
+
+    return fig
+    
 
 def validation():
     '''
