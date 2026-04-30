@@ -389,6 +389,7 @@ def validation(npoints=100):
     fig.axes[1].plot(time, np.full_like(time, h_crit), c='r', ls='--',
                      label=f"h_crit={np.round(h_crit, decimals=3)} m")
     fig.axes[1].legend(loc='best')
+    fig.suptitle("Verification of Solver")
 
     return fig
 
@@ -432,13 +433,16 @@ def curved(npoints=100):
     print("\nResults from baseline test:")
     fig_baseline = snowplot(npoints=npoints, curved=True, Sxpeak=sx_baseline,
                             Cxpeak=cx_baseline)[0]
+    fig_baseline.suptitle("Baseline test")
     print("\nResults from top-heavy snowfall test:")
     fig_tophvy = snowplot(npoints=npoints, curved=True, Sxpeak=sx_tophvy_peak,
                           Cxpeak=cx_tophvy, Sxbase=sx_tophvy_base)[0]
+    fig_tophvy.suptitle("Top-heavy storm test")
     print("\nResults from weak snow structure at peak test:")
     fig_wkstruct = snowplot(npoints=npoints, curved=True,
                             Sxpeak=sx_wkstruct, Cxpeak=cx_wkstruct_peak,
                             Cxbase=cx_wkstruct_base)[0]
+    fig_wkstruct.suptitle("Weak Structure Test")
 
     return fig_baseline, fig_tophvy, fig_wkstruct
 
@@ -469,8 +473,10 @@ def runout(npoints=100):
     print("\nResults from slow flow test, flow_rate =", flow_rate_slow)
     fig_slow = snowplot(npoints=npoints, curved=True, phi_deg=phi,
                         flow_rate=flow_rate_slow, runout_test=True)[0]
+    fig_slow.suptitle("Slow Flow Rate Test")
     print("\nResults from fast flow test, flow_rate =", flow_rate_fast)
     fig_fast = snowplot(npoints=npoints, curved=True, phi_deg=phi,
                         flow_rate=flow_rate_fast, runout_test=True)[0]
+    fig_fast.suptitle("Fast Flow Rate Test")
 
     return fig_slow, fig_fast
