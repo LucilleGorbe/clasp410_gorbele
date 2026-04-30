@@ -24,11 +24,16 @@ be able to run any additional functions.
 
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
 plt.style.use("seaborn-v0_8")
 
 # Define constants
 g = 9.81  # m*s^-2, gravity
 rho_snow = 300  # kg*m^-3, typical density of snow from Lab Manual
+
+# Define cmap for stability parameter
+scolors = ['slategray', 'darkblue', 'darkorchid']
+stability_cmap = ListedColormap(scolors)
 
 
 # Stability analysis function
@@ -71,7 +76,9 @@ def get_stability(h, theta_deg, C, phi_deg=35):
     strength = C + normal * np.tan(phi_rad)  # Pascals
 
     # Calculate and return stability ratio
-    S = strength / stress
+    S = np.empty_like(strength)
+    S[~(stress > 0)] = np.inf
+    S[(stress > 0)] = strength[(stress > 0)] / stress[(stress > 0)]
     return S
 
 
@@ -137,7 +144,7 @@ def avasim(x, theta_deg, Snf, Cx, phi_deg=35.0, dt=0.1,
     # Start time loop from t=1
     for t in range(1, steps):
         # Add snowfall at the top of each time loop
-        h += Snf
+        h += Snf*dt
 
         # Calculate ratio of whole slope
         ratio = get_stability(h, theta_deg=theta_deg, C=Cx, phi_deg=phi_deg)
@@ -153,7 +160,7 @@ def avasim(x, theta_deg, Snf, Cx, phi_deg=35.0, dt=0.1,
             # the reported failure time and location.
             if fail_time is None:
                 fail_time = t*dt  # hrs
-                fail_x = i  # meters
+                fail_x = x[i]  # meters
                 fail_time_idx = t  # index for computing L later
             # Unstable cells send snow downward in a failure
             carry = h[i] * flow_rate
@@ -192,8 +199,9 @@ def avasim(x, theta_deg, Snf, Cx, phi_deg=35.0, dt=0.1,
     return h_t.transpose(), S_t.transpose(), time, outflow, (fail_time, fail_x, fail_time_idx)
 
 
-def snowplot(npoints=100, theta_deg=40.0, curved=False, phi_deg=35.0, Cxpeak=500.0, Sxpeak=0.1, 
-             dt=0.1, steps=600, flow_rate=0.3, h0=None, **kwargs):
+def snowplot(npoints=100, theta_deg=40.0, curved=False, phi_deg=35.0, 
+             Cxpeak=500.0, Sxpeak=0.1, dt=0.1, steps=600, flow_rate=0.3, 
+             runout_test=False, h0=None, **kwargs):
     '''
     Creates figure and axes objects with required plots on them and returns
     them to answer each question.
@@ -220,6 +228,8 @@ def snowplot(npoints=100, theta_deg=40.0, curved=False, phi_deg=35.0, Cxpeak=500
         Ratio of mass that transfers down cells when spilling
     h0 : float or vector of floats, defaults to 0m
         Starting height of the snowpack
+    runout_test : boolean, defaults to False
+        Determines if report runout
     Cxbase : float, optional
         Cohesion of snow at bottom of snowpack, in Pascals. If not provided,
         cohesion is equal across all cells and defined by Cxpeak.  
@@ -272,8 +282,8 @@ def snowplot(npoints=100, theta_deg=40.0, curved=False, phi_deg=35.0, Cxpeak=500
                                            flow_rate=flow_rate, h0=h0)
 
     # Make four plots
-    fig, axes = plt.subplots(2, 2, figsize=(12, 8))
-    
+    fig, axes = plt.subplots(2, 2, figsize=(14, 8))
+
     # Plot h_t over time and space
     h_t_pcolor = axes[0, 0].pcolor(time, x, h_t, cmap='bone',
                                    shading='auto')
@@ -289,37 +299,57 @@ def snowplot(npoints=100, theta_deg=40.0, curved=False, phi_deg=35.0, Cxpeak=500
     axes[0, 1].set_xlabel("Time (hrs)")
     axes[0, 1].set_ylabel("Height of Snowpack (m)")
 
-    # Plot S_t over time and space
-    S_t_pcolor = axes[1, 0].pcolor(time, x, S_t, cmap='summer_r', 
-                                   shading='auto')
+    # Create S_t with values corresponding to levels in the colormap
+    # Stability below 1 is unstable, stability between 1 and 1.3 is critically
+    # stable, and stability above 1.3 is stable
+    s_t_colormapped = np.empty_like(S_t)
+    s_t_colormapped[S_t < 1.0] = 0
+    s_t_colormapped[(S_t >= 1.0) & (S_t < 1.3)] = 1
+    s_t_colormapped[S_t >= 1.3] = 2
+
+    # Plot S_t over time and space, add colorbar
+    S_t_pcolor = axes[1, 0].pcolor(time, x, s_t_colormapped,
+                                   cmap=stability_cmap, shading='auto')
     S_cbar = fig.colorbar(S_t_pcolor, ax=axes[1, 0])
+
+    # Label ticks of colorbar, label plot
+    S_cbar.set_ticks(ticks=[0, 0.667, 1.333], labels=['0', '1', '> 1.3'])
     S_cbar.set_label("Stability")
     axes[1, 0].set_title('Stability of Snowpack over Time')
     axes[1, 0].set_ylabel("Location from Base (m)")
     axes[1, 0].set_xlabel("Time (hrs)")
 
     # Plot min S_t over time, along with S_crit
-    axes[1, 1].plot(time, S_t.min(axis=0), c='yellow', label="Stability")
-    axes[1, 1].plot(time, np.full_like(time, 1.0,), c='k', ls='--', 
+    axes[1, 1].plot(time, S_t.min(axis=0), c='g', label="Stability")
+    axes[1, 1].plot(time, np.full_like(time, 1.0,), c='k', ls='--',
                     label="Critical Stability")
     axes[1, 1].set_title("Minimum Stability of Snowpack over Time")
     axes[1, 1].set_xlabel("Time (hrs)")
     axes[1, 1].set_ylabel("Stability of Snowpack")
+    axes[1, 1].set_ylim(0.7, 1.3)
     axes[1, 1].legend(loc='best')
 
     fig.tight_layout()
 
     # Report outflow, first fail time and location, and furthest location of
-    print("Total outflow:", outflow, "m of snow.")
+    print("Total outflow:", np.round(outflow), "m of snow.")
     if fail[0] is not None:
-        print("First failure time:", fail[0], "Hours")
-        print("First failure location:", fail[1], "m from base of slope")
-        # For Q3: L, runout dist, is defined as first failure location to final
-        # nonzero accumulation. "Nonzero" is defined as 0.03m for our purposes.
-        print("Runout distance:", fail[1] - x[h_t[:,fail[2]] > 0.03][0], "m")
+        print("First failure time:", np.round(fail[0]), "Hours")
+        print("First failure location:", np.round(fail[1]), "m from base of slope")
+        if runout_test:
+            # For Q3: L, runout dist, is defined as first failure location to
+            # final nonzero accumulation. "Nonzero" is defined as 0.03m for our
+            # purposes, and subtracts expected snowfall accumulation to identify loc.
+            # of avalanche accumulation. If no cells match this criteria,
+            # report hazard zone extension beyond montain slope
+            # Check by using boolean indexing and boolean if statement
+            if np.sum((h_t[:,fail[2]] - Sx*fail[0]) > 0.03):
+                print("Runout distance:", np.round(fail[1] - x[(h_t[:,fail[2]] - Sx*fail[0]) > 0.03][0]), "m")
+            else:
+                print("Runout does not travel far.")
 
     return fig, time
-    
+
 
 def validation(npoints=100):
     '''
@@ -343,20 +373,98 @@ def validation(npoints=100):
     phi = 35  # Degrees
 
     # Calculate and report h_crit
-    h_crit = C / (rho_snow * g * (np.sin(np.radians(theta)) - np.cos(np.radians(theta)) * np.tan(np.radians(phi))))
-    print("h_crit =", h_crit, "m")
+    h_crit = C / (rho_snow * g * (np.sin(np.radians(theta))
+                                  - np.cos(np.radians(theta))
+                                  * np.tan(np.radians(phi))))
+    print("h_crit =", np.round(h_crit, decimals=3), "m")
 
     # Run simulation and capture figure and axes
     # Using no inputs, as the defaults are fine this time
     fig, time = snowplot(npoints=npoints)
-    fig.axes[1].plot(time, np.full_like(time, h_crit), c='r', ls='--', label=f"h_crit={h_crit} m")
+    fig.axes[1].plot(time, np.full_like(time, h_crit), c='r', ls='--', label=f"h_crit={np.round(h_crit, decimals=3)} m")
     fig.axes[1].legend(loc='best')
 
     return fig
 
-def curved():
+def curved(npoints=100):
     '''
     This function modifies the model to use spatially varying slope. It then
     tests snow properties, snowfall distribution and cohesion, to see how
     their variation might impact avalanche dynamics. Answers question #2.
+
+    Parameters
+    -----
+    npoints : int, defaults to 100
+        The number of points along the x-axis for computation.
+
+    Returns
+    -----
+    fig_baseline : matplotlib figure object
+        The figure that the results of the baseline test are plotted on
+    fig_tophvy : matplotlib figure object
+        The figure that the results of the top-heavy snow test are plotted on
+    fig_wkstruct : matplotlib figure object
+        The figure that the results of the weak structure test are plotted on
     '''
+
+    # Define snowfall rate (m/hr) and cohesion (Pa) for diff. scenarios
+    # Baseline comparison scenario
+    sx_baseline = 0.05
+    cx_baseline = 500
+    
+    # Top-heavy scenario
+    sx_tophvy_base = 0.02
+    sx_tophvy_peak = 0.08
+    cx_tophvy = 500
+
+    # Weak snow structure scenario
+    sx_wkstruct = 0.05
+    cx_wkstruct_base = 800
+    cx_wkstruct_peak = 200
+
+    # Run simulations and capture figure objects from snowplot
+    print("\nResults from baseline test:")
+    fig_baseline = snowplot(npoints=npoints, curved=True, Sxpeak=sx_baseline,
+                            Cxpeak=cx_baseline)[0]
+    print("\nResults from top-heavy snowfall test:")
+    fig_tophvy = snowplot(npoints=npoints, curved=True, Sxpeak=sx_tophvy_peak,
+                          Cxpeak=cx_tophvy, Sxbase=sx_tophvy_base)[0]
+    print("\nResults from weak snow structure at peak test:")
+    fig_wkstruct = snowplot(npoints=npoints, curved=True,
+                            Sxpeak=sx_wkstruct, Cxpeak=cx_wkstruct_peak,
+                            Cxbase=cx_wkstruct_base)[0]
+
+    return fig_baseline, fig_tophvy, fig_wkstruct
+
+
+def runout(npoints=100):
+    '''
+    This function determines tests the impact on avalanche flow rate on the
+    extent of hazard from runoff.
+
+    Parameters
+    -----
+    npoints : int, defaults to 100
+        The number of points along the x-axis for computation.
+
+    Returns
+    -----
+    fig_slow : matplotlib figure object
+        The figure of slow flow test
+    fig_fast : matplotlib figure object
+        The figure of fast flow test
+    '''
+
+    # Set friction angle (deg.) and flow rate, the latter for two diff sims.
+    phi = 25
+    flow_rate_slow = 0.30
+    flow_rate_fast = 0.50
+
+    print("\nResults from slow flow test, flow_rate =", flow_rate_slow)
+    fig_slow = snowplot(npoints=npoints, curved=True, phi_deg=phi,
+                        flow_rate=flow_rate_slow, runout_test=True)[0]
+    print("\nResults from fast flow test, flow_rate =", flow_rate_fast)
+    fig_fast = snowplot(npoints=npoints, curved=True, phi_deg=phi,
+                        flow_rate=flow_rate_fast, runout_test=True)[0]
+    
+    return fig_slow, fig_fast
