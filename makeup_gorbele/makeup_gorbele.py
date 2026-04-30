@@ -470,12 +470,18 @@ def runout(npoints=100):
     flow_rate_slow = 0.30
     flow_rate_fast = 0.50
 
+    # Use top-heavy storm configuration
+    sx_tophvy_base = 0.02
+    sx_tophvy_peak = 0.08
+
     print("\nResults from slow flow test, flow_rate =", flow_rate_slow)
     fig_slow = snowplot(npoints=npoints, curved=True, phi_deg=phi,
+                        Sxpeak=sx_tophvy_peak, Sxbase=sx_tophvy_base,
                         flow_rate=flow_rate_slow, runout_test=True)[0]
     fig_slow.suptitle("Slow Flow Rate Test")
     print("\nResults from fast flow test, flow_rate =", flow_rate_fast)
     fig_fast = snowplot(npoints=npoints, curved=True, phi_deg=phi,
+                        Sxpeak=sx_tophvy_peak, Sxbase=sx_tophvy_base,
                         flow_rate=flow_rate_fast, runout_test=True)[0]
     fig_fast.suptitle("Fast Flow Rate Test")
 
