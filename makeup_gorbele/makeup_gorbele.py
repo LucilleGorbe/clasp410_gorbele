@@ -196,12 +196,12 @@ def avasim(x, theta_deg, Snf, Cx, phi_deg=35.0, dt=0.1,
     # Return height, stability, and time arrays, along with total outflow
     # And failure timing + location along slope
     # Transpose h_t and S_t such that x is on the x-axis
-    return h_t.transpose(), S_t.transpose(), time, outflow, (fail_time, fail_x, 
+    return h_t.transpose(), S_t.transpose(), time, outflow, (fail_time, fail_x,
                                                              fail_time_idx)
 
 
-def snowplot(npoints=100, theta_deg=40.0, curved=False, phi_deg=35.0, 
-             Cxpeak=500.0, Sxpeak=0.1, dt=0.1, steps=600, flow_rate=0.3, 
+def snowplot(npoints=100, theta_deg=40.0, curved=False, phi_deg=35.0,
+             Cxpeak=500.0, Sxpeak=0.1, dt=0.1, steps=600, flow_rate=0.3,
              runout_test=False, h0=None, **kwargs):
     '''
     Creates figure and axes objects with required plots on them and returns
@@ -336,7 +336,8 @@ def snowplot(npoints=100, theta_deg=40.0, curved=False, phi_deg=35.0,
     print("Total outflow:", np.round(outflow), "m of snow.")
     if fail[0] is not None:
         print("First failure time:", np.round(fail[0]), "Hours")
-        print("First failure location:", np.round(fail[1]), "m from base of slope")
+        print("First failure location:", np.round(fail[1]),
+              "m from base of slope")
         if runout_test:
             # For Q3: L, runout dist, is defined as first failure location to
             # final nonzero accumulation. "Nonzero" is defined as 0.03m for our
@@ -348,7 +349,7 @@ def snowplot(npoints=100, theta_deg=40.0, curved=False, phi_deg=35.0,
                 print("Runout distance:", np.round(fail[1] -
                                                    x[(h_t[:,fail[2]] -
                                                        Sx*fail[0]) > 0.03][0]),
-                                                       "m")
+                      "m")
             else:
                 print("Runout does not travel far.")
 
