@@ -196,7 +196,8 @@ def avasim(x, theta_deg, Snf, Cx, phi_deg=35.0, dt=0.1,
     # Return height, stability, and time arrays, along with total outflow
     # And failure timing + location along slope
     # Transpose h_t and S_t such that x is on the x-axis
-    return h_t.transpose(), S_t.transpose(), time, outflow, (fail_time, fail_x, fail_time_idx)
+    return h_t.transpose(), S_t.transpose(), time, outflow, (fail_time, fail_x, 
+                                                             fail_time_idx)
 
 
 def snowplot(npoints=100, theta_deg=40.0, curved=False, phi_deg=35.0, 
@@ -344,7 +345,10 @@ def snowplot(npoints=100, theta_deg=40.0, curved=False, phi_deg=35.0,
             # report hazard zone extension beyond montain slope
             # Check by using boolean indexing and boolean if statement
             if np.sum((h_t[:,fail[2]] - Sx*fail[0]) > 0.03):
-                print("Runout distance:", np.round(fail[1] - x[(h_t[:,fail[2]] - Sx*fail[0]) > 0.03][0]), "m")
+                print("Runout distance:", np.round(fail[1] -
+                                                   x[(h_t[:,fail[2]] -
+                                                       Sx*fail[0]) > 0.03][0]),
+                                                       "m")
             else:
                 print("Runout does not travel far.")
 
@@ -381,7 +385,8 @@ def validation(npoints=100):
     # Run simulation and capture figure and axes
     # Using no inputs, as the defaults are fine this time
     fig, time = snowplot(npoints=npoints)
-    fig.axes[1].plot(time, np.full_like(time, h_crit), c='r', ls='--', label=f"h_crit={np.round(h_crit, decimals=3)} m")
+    fig.axes[1].plot(time, np.full_like(time, h_crit), c='r', ls='--',
+                     label=f"h_crit={np.round(h_crit, decimals=3)} m")
     fig.axes[1].legend(loc='best')
 
     return fig
@@ -411,7 +416,7 @@ def curved(npoints=100):
     # Baseline comparison scenario
     sx_baseline = 0.05
     cx_baseline = 500
-    
+
     # Top-heavy scenario
     sx_tophvy_base = 0.02
     sx_tophvy_peak = 0.08
@@ -466,5 +471,5 @@ def runout(npoints=100):
     print("\nResults from fast flow test, flow_rate =", flow_rate_fast)
     fig_fast = snowplot(npoints=npoints, curved=True, phi_deg=phi,
                         flow_rate=flow_rate_fast, runout_test=True)[0]
-    
+
     return fig_slow, fig_fast
