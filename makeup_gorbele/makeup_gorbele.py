@@ -335,7 +335,7 @@ def snowplot(npoints=100, theta_deg=40.0, curved=False, phi_deg=35.0,
     # Report outflow, first fail time and location, and furthest location of
     print("Total outflow:", np.round(outflow), "m of snow.")
     if fail[0] is not None:
-        print("First failure time:", np.round(fail[0]), "Hours")
+        print("First failure time:", fail[0], "Hours")
         print("First failure location:", np.round(fail[1]),
               "m from base of slope")
         if runout_test:
